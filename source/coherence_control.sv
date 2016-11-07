@@ -86,6 +86,7 @@ module coherence_control (
 		end
 	end
 
+
 // Coherence Controller Next State Logic
 // ----------------------------------------- //
 	always_comb begin
@@ -231,6 +232,7 @@ module coherence_control (
 		// Writing Requestee Data Word One
 		end else if (currState == W1MOD) begin
 			mcif.dWEN = 1;
+			newRData1 = mcif.dload;
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
@@ -242,6 +244,7 @@ module coherence_control (
 		// Writing Requestee Data Word Two
 		end else if (currState == W2MOD) begin
 			mcif.dWEN = 1;
+			newRData2 = mcif.dload;
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];

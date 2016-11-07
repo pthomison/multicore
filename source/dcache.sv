@@ -48,6 +48,12 @@ import cpu_types_pkg::*;
 	STOP         = 4'hB
 	} controllerState;
 
+	typedef enum logic [1:0] {
+		MOD = 2'b11,
+		SHD = 2'b10,
+		INV = 2'b01
+	} frameState;
+
 // Module Variables
 // ----------------------------------------- //
 	frame cacheOne [7:0];
@@ -336,7 +342,7 @@ import cpu_types_pkg::*;
 	assign cdataTwo = (reqAddr.blkoff == 0) ? cacheTwo[reqAddr.idx].data.wordA : cacheTwo[reqAddr.idx].data.wordB;
 	assign cdata    = (prehitOne == 1) ? cdataOne : cdataTwo; // JANKY BAD TERRIBLE CODE; PLEASE FIX
 
-// Destination Selector -- only update on idle -- BIG ISSUES W/ SYNTHESIS
+// Destination Selector
 // ----------------------------------------- //
 	always_comb begin
 		validOne = cacheOne[reqAddr.idx].valid;
@@ -605,6 +611,12 @@ always_comb begin
 		flushCacheSelect = 1'bx;
 		flushIdxSelect = 1'bx;
 	end
+end
+
+
+// MSI State Shortcuts
+always_comb begin
+	
 end
 
 // Cache Controller Control Signals

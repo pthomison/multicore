@@ -37,8 +37,8 @@ module coherence_control_tb;
 
   // DUT
 `ifndef MAPPED
-  dcache            DUTDC1(CLK, nRST, dcif0, cache0);
-  dcache            DUTDC2(CLK, nRST, dcif1, cache1);
+  dcache            DUTDC0(CLK, nRST, dcif0, cache0);
+  dcache            DUTDC1(CLK, nRST, dcif1, cache1);
   coherence_control DUTCC(CLK, nRST, ccif, cache2);
   memory_control    DUTMEM(CLK, nRST, mcif);
   ram               DUTRAM(CLK, nRST, ramif);
@@ -61,11 +61,30 @@ logic issue;
 parameter PERIOD = 10;
 initial begin
 
-// ----------------------------------------- // testcase 0 - reset
+// DC
+dcif0.imemREN  = 0;
+dcif0.imemaddr = 0;
+dcif0.datomic  = 0;
+dcif1.imemREN  = 0;
+dcif1.imemaddr = 0;
+dcif1.datomic  = 0;
 
+// testcase 0 - reset
+// ----------------------------------------- // 
   testcase = 0;
 
   //Intial Conditions
+  dcif0.halt      = 0;
+  dcif0.dmemREN   = 0;
+  dcif0.dmemWEN   = 0;
+  dcif0.dmemstore = 0;
+  dcif0.dmemaddr  = 0;
+  dcif1.halt      = 0;
+  dcif1.dmemREN   = 0;
+  dcif1.dmemWEN   = 0;
+  dcif1.dmemstore = 0;
+  dcif1.dmemaddr  = 0;
+
 
   // Reseting
   #(PERIOD*2);
@@ -73,6 +92,16 @@ initial begin
   #(PERIOD*2);
   nRST = 1;
   #(PERIOD);
+
+// testcase 1 - read
+// ----------------------------------------- // 
+  testcase = 1;
+
+  //Intial Conditions
+  dcif0.dmemREN   = 1;
+  dcif0.dmemaddr  = 32'h00000100;
+
+  @(dcif0.dhit);
 
 
 end
