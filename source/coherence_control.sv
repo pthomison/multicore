@@ -48,8 +48,9 @@ module coherence_control (
 	controllerState nextState;
 
 	logic currReq, nextReq;
-	word_t rdata1, rdata2; 
+	word_t rdata1, rdata2;
 	word_t newRData1, newRData2;
+	logic lastUsedIcache;
 
 
 // Coherence Controller Flip Flop
@@ -106,7 +107,7 @@ module coherence_control (
 				nextState = W1WEN;
 			end else begin
 				nextState = IDLE;
-			end 
+			end
 
 		end else if (currState == SNOOP) begin
 			nextState = R1;
@@ -114,7 +115,7 @@ module coherence_control (
 			if (currReq == 0) begin
 				if (cif.ccwrite[1] == 1) begin
 					nextState = W1MOD;
-				end else begin 
+				end else begin
 					nextState = R1;
 				end
 			end else if (currReq == 1) begin
@@ -141,13 +142,13 @@ module coherence_control (
 			nextState = R1;
 			if (mcif.dwait == 0) begin
 				nextState = R2;
-			end 
+			end
 
 		end else if (currState == R2) begin
 			nextState = R2;
 			if (mcif.dwait == 0) begin
 				nextState = DATAREADY1;
-			end 
+			end
 
 		end else if (currState == DATAREADY1) begin
 			nextState = DATAREADY2;
@@ -222,11 +223,11 @@ module coherence_control (
 				nextReq   = 1;
 			end
 
-		end else if (currState == SNOOP) begin	
+		end else if (currState == SNOOP) begin
 			if (currReq == 0) begin
-				cif.ccsnoopaddr[1] = cif.daddr[0]; 
+				cif.ccsnoopaddr[1] = cif.daddr[0];
 			end else if (currReq == 1) begin
-				cif.ccsnoopaddr[0] = cif.daddr[1]; 
+				cif.ccsnoopaddr[0] = cif.daddr[1];
 			end
 
 		// Writing Requestee Data Word One
@@ -318,6 +319,12 @@ module coherence_control (
 				cif.ccinv[1] = 0;
 			end
 		end
+	end
+
+	
+	// ICache Handling
+	always_comb begin
+	  
 	end
 
 

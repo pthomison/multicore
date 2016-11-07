@@ -11,7 +11,7 @@
 // Module Declaration
 module dcache (
   input CLK, nRST,
-  datapath_cache_if.dcache dcif, 
+  datapath_cache_if.dcache dcif,
   caches_if.dcache cif
 );
 
@@ -20,7 +20,7 @@ import cpu_types_pkg::*;
 // Module Structs
 // ----------------------------------------- //
 	typedef struct packed {
-		word_t wordA; 
+		word_t wordA;
 		word_t wordB;
 	} block;
 
@@ -42,7 +42,7 @@ import cpu_types_pkg::*;
 	DIRTYCLEANB  = 4'h5,
 	DATAREQA     = 4'h6,
 	DATAREQB     = 4'h7,
-	OVERWRITE    = 4'h8, 
+	OVERWRITE    = 4'h8,
 	HITSTATE     = 4'h9,
 	FLUSH        = 4'hA,
 	STOP         = 4'hB
@@ -77,7 +77,7 @@ import cpu_types_pkg::*;
 	word_t loadAddrA, loadAddrB;
 
 	// 0 for cache1, 1 for cache2
-	logic avaliableCache; 
+	logic avaliableCache;
 
 	logic destinationDirty;
 
@@ -111,7 +111,7 @@ import cpu_types_pkg::*;
 			reqAddr        = dcachef_t'(dcif.dmemaddr);
 		end else begin
 			// Independently Set Index for Flushing
-			reqAddr.idx    = flushIdxSelect; 
+			reqAddr.idx    = flushIdxSelect;
 			reqAddr.tag    = 0;
 			reqAddr.blkoff = 0;
 			reqAddr.bytoff = 0;
@@ -142,7 +142,7 @@ import cpu_types_pkg::*;
 				end
 			end
 
-			// Miss; Need to write to next avaliable slot 
+			// Miss; Need to write to next avaliable slot
 			else if (prehit == 0) begin
 				
 
@@ -185,7 +185,7 @@ import cpu_types_pkg::*;
 						end
 					end
 				end
-			end 
+			end
 
 
 
@@ -234,7 +234,7 @@ import cpu_types_pkg::*;
 					end
 				end
 			end
-			// Miss; Need to write to next avaliable slot 
+			// Miss; Need to write to next avaliable slot
 			else if (prehit == 0) begin
 
 				if (avaliableCache == 1) begin
@@ -275,7 +275,7 @@ import cpu_types_pkg::*;
 						end
 					end
 				end
-			end 
+			end
 
 			// Hit; Need to write to reg if it is a write
 			else begin
@@ -351,7 +351,7 @@ import cpu_types_pkg::*;
 
 		if (dcif.halt == 1) begin
 			avaliableCache = flushCacheSelect;
-		end else begin 
+		end else begin
 
 			casez({validOne,validTwo})
 				0: avaliableCache = 0;
@@ -535,7 +535,7 @@ import cpu_types_pkg::*;
 				cacheTwo[4].dirty == 1 ||
 				cacheTwo[5].dirty == 1 ||
 				cacheTwo[6].dirty == 1 ||
-				cacheTwo[7].dirty == 1 
+				cacheTwo[7].dirty == 1
 			) begin
 				nextState = DIRTYCLEANA;
 			end else begin
@@ -543,14 +543,14 @@ import cpu_types_pkg::*;
 			end
 		end else if (currState == HITSTATE) begin
 			if (cif.dwait == 0) begin
-				nextState = STOP; 
+				nextState = STOP;
 			end else begin
-				nextState = HITSTATE; 
+				nextState = HITSTATE;
 			end
 		end else if (currState == STOP) begin
 			// Stops the system
 			nextState = STOP;
-		end 
+		end
 	end
 
 
@@ -633,13 +633,15 @@ end
 		cif.dWEN      = 0;
 		cif.daddr     = 0;
 		cif.dstore    = 0;
+		cif.ccwrite   = 0;
+		cif.cctrans   = 0;
 
 		// Internal Defaults
 		wordDestRead     = 0;
 		updateRead       = 0;
 		updateWrite      = 0;
 		updateRecentUsed = 0;
-		updateClean		 = 0; //new
+		updateClean		   = 0; //new
 		flushWord        = 0;
 
 
@@ -664,6 +666,7 @@ end
 
 		end else if (currState == DATAREQA) begin
 			// Requests First Block of Data
+			cif.cctrans   = 1;
 			cif.dREN      = 1;
 			cif.daddr     = loadAddrA;
 			updateRead    = 1;
@@ -676,7 +679,7 @@ end
 			updateRead    = 1;
 			wordDestRead  = 1;
 
-		end else if (currState == OVERWRITE) begin	
+		end else if (currState == OVERWRITE) begin
 			// Writes in new write data, makes dirty
 			updateClean	  = 0;
 			updateWrite   = 1;
@@ -707,7 +710,7 @@ end
 		// Stop
 			dcif.flushed  = 1;
 
-		end 
+		end
 	end
 
 endmodule

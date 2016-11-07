@@ -37,8 +37,8 @@ module coherence_control_tb;
 
   // DUT
 `ifndef MAPPED
-  dcache            DUTDC0(CLK, nRST, dcif0, cache0);
-  dcache            DUTDC1(CLK, nRST, dcif1, cache1);
+  caches            DUTCACHE1(CLK, nRST, dcif0, cache0);
+  caches            DUTCACHE2(CLK, nRST, dcif1, cache1);
   coherence_control DUTCC(CLK, nRST, ccif, cache2);
   memory_control    DUTMEM(CLK, nRST, mcif);
   ram               DUTRAM(CLK, nRST, ramif);
@@ -48,13 +48,13 @@ module coherence_control_tb;
 endmodule
 
 program test(
-  input logic CLK, 
+  input logic CLK,
   output logic nRST
 );
 
 import cpu_types_pkg::*;
 
-int testcase; 
+int testcase;
 logic issue;
 
 
@@ -70,7 +70,7 @@ dcif1.imemaddr = 0;
 dcif1.datomic  = 0;
 
 // testcase 0 - reset
-// ----------------------------------------- // 
+// ----------------------------------------- //
   testcase = 0;
 
   //Intial Conditions
@@ -94,14 +94,14 @@ dcif1.datomic  = 0;
   #(PERIOD);
 
 // testcase 1 - read
-// ----------------------------------------- // 
+// ----------------------------------------- //
   testcase = 1;
 
   //Intial Conditions
   dcif0.dmemREN   = 1;
   dcif0.dmemaddr  = 32'h00000100;
 
-  @(dcif0.dhit);
+  #(PERIOD*20);
 
 
 end
