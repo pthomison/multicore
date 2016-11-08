@@ -153,7 +153,7 @@ dcif1.datomic  = 0;
 
   #(10 * PERIOD);
 
-// testcase 4 - 
+// testcase 4 - read MISS 1, Snoop Miss 0
 // ----------------------------------------- //
   testcase = 4;
 
@@ -171,7 +171,7 @@ dcif1.datomic  = 0;
 
 
 
-// // testcase 4 - write MISS 0
+// // testcase 5 - write MISS 0, Snoop Hit 1
 // // ----------------------------------------- //
   testcase = 5;
 
@@ -189,9 +189,37 @@ dcif1.datomic  = 0;
   #(PERIOD*10);
 
 
+// testcase 6 - read miss 1, snoop hit 0 (M -> S)
+// ----------------------------------------- //
+  testcase = 6;
 
+  //Intial Conditions
+  dcif1.dmemREN   = 1;
+  dcif1.dmemaddr  = 32'h0000B000;
+  
+  @(posedge dcif1.dhit);
+  #(PERIOD);
 
+  dcif1.dmemREN   = 0;
+  dcif1.dmemaddr  = 32'h00000000;
+  #(PERIOD*10);
 
+// // testcase 7 - write hit 0, snoop hit (S -> M), (S -> I)
+// // ----------------------------------------- //
+  testcase = 7;
+
+  //Intial Conditions
+  dcif0.dmemWEN   = 1;
+  dcif0.dmemaddr  = 32'h0000B000;
+  dcif0.dmemstore  = 32'h0000DCBA;
+  
+  @(posedge dcif0.dhit);
+  #(PERIOD);
+
+  dcif0.dmemWEN   = 0;
+  dcif0.dmemaddr  = 32'h00000000;
+  dcif0.dmemstore  = 32'h00000000;
+  #(PERIOD*10);
 
 end
 endprogram

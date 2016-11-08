@@ -74,7 +74,7 @@ import cpu_types_pkg::*;
 	//updateClean - if 1 then current data is clean, if 0 then dirty
 	logic updateRead, updateWrite, updateRecentUsed, updateClean;
 
-	logic snpHit, snpHitOne, snpHitTwo, snpCache;
+	logic snpHit, snpHitOne, snpHitTwo, snpCache, snpClean;
 
 	//Address of word A, address of word B
 	word_t loadAddrA, loadAddrB;
@@ -149,6 +149,9 @@ import cpu_types_pkg::*;
 			else if (snpHit == 1 && cif.ccwait == 1 && snpCache == 0) begin
 				if (cif.ccinv == 1) begin
 					cacheOne[snpAddr.idx].valid = 0;
+				end
+				if (snpClean == 1) begin
+					cacheOne[snpAddr.idx].dirty = 0;
 				end
 			end
 
@@ -248,6 +251,9 @@ import cpu_types_pkg::*;
 			else if (snpHit == 1 && cif.ccwait == 1 && snpCache == 1) begin
 				if (cif.ccinv == 1) begin
 					cacheTwo[snpAddr.idx].valid = 0;
+				end
+				if (snpClean == 1) begin
+					cacheTwo[snpAddr.idx].dirty = 0;
 				end
 			end
 	
@@ -699,6 +705,7 @@ end
 		updateRecentUsed = 0;
 		updateClean		   = 0; //new
 		flushWord        = 0;
+		snpClean         = 0;
 
 
 		if (currState == IDLE) begin
@@ -721,6 +728,7 @@ end
 			cif.dstore    = dirtyData.wordB;
 			flushWord     = 1;
 			cif.cctrans   = 1;
+			snpClean      = 1;
 
 		end else if (currState == DATAREQA) begin
 			// Requests First Block of Data

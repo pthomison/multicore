@@ -138,11 +138,12 @@ add wave -noupdate -group RAM /coherence_control_tb/DUTRAM/ramif/memREN
 add wave -noupdate -group RAM /coherence_control_tb/DUTRAM/ramif/memWEN
 add wave -noupdate -group RAM /coherence_control_tb/DUTRAM/ramif/memaddr
 add wave -noupdate -group RAM /coherence_control_tb/DUTRAM/ramif/memstore
+add wave -noupdate /coherence_control_tb/PROG/testcase
 add wave -noupdate -expand -group system_state /coherence_control_tb/DUTCACHE1/DCACHE/currState
 add wave -noupdate -expand -group system_state /coherence_control_tb/DUTCACHE2/DCACHE/currState
 add wave -noupdate -expand -group system_state /coherence_control_tb/DUTCC/currState
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {526451 ps} 0}
+WaveRestoreCursors {{Cursor 1} {1500801 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
 configure wave -valuecolwidth 100
@@ -158,4 +159,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {0 ps} {666750 ps}
+WaveRestoreZoom {0 ps} {1811250 ps}
