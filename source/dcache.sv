@@ -599,7 +599,7 @@ import cpu_types_pkg::*;
 			) begin
 				nextState = DIRTYCLEANA;
 			end else begin
-				nextState = HITSTATE;
+				nextState = STOP;
 			end
 		end else if (currState == HITSTATE) begin
 			if (cif.dwait == 0) begin
@@ -775,9 +775,9 @@ end
 
 
 		end else if (currState == HITSTATE) begin
-			cif.dWEN      = 1;
-			cif.daddr     = 32'h00003100;
-			cif.dstore    = hitcount-misscount;
+			//cif.dWEN      = 1;
+			//cif.daddr     = 32'h00003100;
+			//cif.dstore    = hitcount-misscount;
 		end else if (currState == STOP) begin
 		// Stop
 			dcif.flushed  = 1;

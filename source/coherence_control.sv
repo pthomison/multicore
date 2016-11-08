@@ -12,7 +12,7 @@
 module coherence_control (
   input CLK, nRST,
   cache_control_if.cc cif,
-  caches_if.dcache mcif
+  caches_if.caches mcif
 );
   	// type import
   	import cpu_types_pkg::*;
@@ -55,6 +55,7 @@ module coherence_control (
 	word_t rdata1, rdata2;
 	word_t newRData1, newRData2;
 	logic lastUsedIcache;
+	logic NextCache;
 
 
 // Coherence Controller Flip Flop
@@ -117,7 +118,34 @@ module coherence_control (
 		end
 	end
 
+// Next Cache Flip Flop and Comb
+// ----------------------------------------- //
 
+	always_ff @(posedge CLK, negedge nRST) begin
+		if(!nRST) begin
+			NextCache <= 0;
+		end else begin
+			if (mcif.iwait == 0) begin
+				NextCache <= ~NextCache;
+			end
+		end
+	end
+
+	always_comb begin
+		cif.iwait[0] = 1;
+		cif.iwait[1] = 1;
+		if (NextCache == 0) begin
+			mcif.iaddr   = cif.iaddr[0];
+			mcif.iREN    = cif.iREN[0];
+			cif.iload[0] = mcif.iload;
+			cif.iwait[0] = mcif.iwait;
+		end else begin
+			mcif.iaddr   = cif.iaddr[1];
+			mcif.iREN    = cif.iREN[1];
+			cif.iload[1] = mcif.iload;
+			cif.iwait[1] = mcif.iwait;
+		end
+	end
 
 // Coherence Controller Next State Logic
 // ----------------------------------------- //

@@ -16,6 +16,7 @@ interface pc_if;
   logic [1:0] pcsrc;
   logic [15:0] immed;
 	word_t  pcout, immedEXT, rdat1, branch_pc4;
+  
 
   // file ports
   modport pc (

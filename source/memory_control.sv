@@ -16,64 +16,76 @@ module memory_control (
 // type import
 import cpu_types_pkg::*;
 
-assign ccif.iload = ccif.ramload;
-assign ccif.dload = ccif.ramload;
+caches_if cache0();
+caches_if cache1();
+cache_control_if #(.CPUS(1)) mcif (cache0, cache1);
+coherence_control COHCON(CLK, nRST, ccif, cache0);
+
+assign mcif.iload = mcif.ramload;
+assign mcif.dload = mcif.ramload;
+
+assign mcif.ramstate = ccif.ramstate;
+assign ccif.ramaddr = mcif.ramaddr;
+assign ccif.ramstore = mcif.ramstore;
+assign mcif.ramload  = ccif.ramload;
+assign ccif.ramWEN   = mcif.ramWEN;
+assign ccif.ramREN   = mcif.ramREN;
 
 always_comb begin
 
   //defaults
-  ccif.ramaddr = ccif.daddr;
-  ccif.ramREN = 0;
-  ccif.ramWEN = 0;
-  ccif.dwait = 1;
-  ccif.iwait = 1;
-  ccif.ramstore = ccif.dstore;
+  mcif.ramaddr = mcif.daddr;
+  mcif.ramREN = 0;
+  mcif.ramWEN = 0;
+  mcif.dwait = 1;
+  mcif.iwait = 1;
+  mcif.ramstore = mcif.dstore;
 
-  if (ccif.dREN) begin
-    ccif.ramaddr = ccif.daddr;
-    ccif.ramREN = 1;
-    ccif.ramWEN = 0;
+  if (mcif.dREN) begin
+    mcif.ramaddr = mcif.daddr;
+    mcif.ramREN = 1;
+    mcif.ramWEN = 0;
 
-    if (ccif.ramstate == ACCESS) begin
-      ccif.dwait = 0;
-      ccif.iwait = 1;
+    if (mcif.ramstate == ACCESS) begin
+      mcif.dwait = 0;
+      mcif.iwait = 1;
     end
     else begin
-      ccif.dwait = 1;
-      ccif.iwait = 1;
+      mcif.dwait = 1;
+      mcif.iwait = 1;
     end
 
 
   end
-  else if (ccif.dWEN) begin
-    ccif.ramstore = ccif.dstore;
-    ccif.ramaddr = ccif.daddr;
-    ccif.ramREN = 0;
-    ccif.ramWEN = 1;
+  else if (mcif.dWEN) begin
+    mcif.ramstore = mcif.dstore;
+    mcif.ramaddr = mcif.daddr;
+    mcif.ramREN = 0;
+    mcif.ramWEN = 1;
 
-    if (ccif.ramstate == ACCESS) begin
-      ccif.dwait = 0;
-      ccif.iwait = 1;
+    if (mcif.ramstate == ACCESS) begin
+      mcif.dwait = 0;
+      mcif.iwait = 1;
     end
     else begin
-      ccif.dwait = 1;
-      ccif.iwait = 1;
+      mcif.dwait = 1;
+      mcif.iwait = 1;
     end
 
 
   end
-  else if (ccif.iREN) begin
-    ccif.ramaddr = ccif.iaddr;
-    ccif.ramREN = 1;
-    ccif.ramWEN = 0;
+  else if (mcif.iREN) begin
+    mcif.ramaddr = mcif.iaddr;
+    mcif.ramREN = 1;
+    mcif.ramWEN = 0;
 
-    if (ccif.ramstate == ACCESS) begin
-      ccif.dwait = 1;
-      ccif.iwait = 0;
+    if (mcif.ramstate == ACCESS) begin
+      mcif.dwait = 1;
+      mcif.iwait = 0;
     end
     else begin
-      ccif.dwait = 1;
-      ccif.iwait = 1;
+      mcif.dwait = 1;
+      mcif.iwait = 1;
     end
   end
 
