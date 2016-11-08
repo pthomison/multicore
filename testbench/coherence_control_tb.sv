@@ -111,10 +111,13 @@ dcif1.datomic  = 0;
   dcif0.dmemREN   = 1;
   dcif0.dmemaddr  = 32'h00000100;
 
-  #(PERIOD*20);
+  @(posedge dcif0.dhit);
+  #(PERIOD);
+
   dcif0.dmemREN   = 0;
   dcif0.dmemaddr  = 32'h00000000;
-  #(PERIOD*10);
+
+  #(10 * PERIOD);
 
 
 
@@ -126,48 +129,65 @@ dcif1.datomic  = 0;
   dcif1.dmemREN   = 1;
   dcif1.dmemaddr  = 32'h0000A000;
 
-  #(PERIOD*20);
+  @(posedge dcif1.dhit);
+  #(PERIOD);
+
   dcif1.dmemREN   = 0;
   dcif1.dmemaddr  = 32'h00000000;
-  #(PERIOD*10);
 
+  #(10 * PERIOD);
 
-// testcase 3 - read MISS 1
+// testcase 3 - read MISS 1, Snoop Hit 0
 // ----------------------------------------- //
   testcase = 3;
 
   //Intial Conditions
   dcif1.dmemREN   = 1;
-  dcif1.dmemaddr  = 32'h0000B000;
-  //dcif0.dmemstore  = 32'h0000ABCD;
+  dcif1.dmemaddr  = 32'h00000100;
   
-  //#(PERIOD*1);
-  //dcif0.dmemWEN   = 0;
-  #(PERIOD*15);
+  @(posedge dcif1.dhit);
+  #(PERIOD);
+
   dcif1.dmemREN   = 0;
   dcif1.dmemaddr  = 32'h00000000;
-  //dcif0.dmemstore  = 32'h00000000;
+
+  #(10 * PERIOD);
+
+// testcase 4 - 
+// ----------------------------------------- //
+  testcase = 4;
+
+  //Intial Conditions
+  dcif1.dmemREN   = 1;
+  dcif1.dmemaddr  = 32'h0000B000;
+  
+  @(posedge dcif1.dhit);
+  #(PERIOD);
+
+  dcif1.dmemREN   = 0;
+  dcif1.dmemaddr  = 32'h00000000;
   #(PERIOD*10);
 
 
 
 
-// testcase 4 - write MISS 0
-// ----------------------------------------- //
-  testcase = 4;
+// // testcase 4 - write MISS 0
+// // ----------------------------------------- //
+  testcase = 5;
 
   //Intial Conditions
   dcif0.dmemWEN   = 1;
   dcif0.dmemaddr  = 32'h0000B000;
   dcif0.dmemstore  = 32'h0000ABCD;
   
-  //#(PERIOD*1);
-  //dcif0.dmemWEN   = 0;
-  #(PERIOD*25);
+  @(posedge dcif0.dhit);
+  #(PERIOD);
+
   dcif0.dmemWEN   = 0;
   dcif0.dmemaddr  = 32'h00000000;
   dcif0.dmemstore  = 32'h00000000;
   #(PERIOD*10);
+
 
 
 

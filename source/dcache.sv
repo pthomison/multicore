@@ -414,7 +414,7 @@ import cpu_types_pkg::*;
 		if (cif.ccwait == 1 && snpHit) begin
 			dirtyAddr = cif.ccsnoopaddr;
 			dirtyData = (snpCache == 0) ? cacheOne[snpAddr.idx].data : cacheTwo[snpAddr.idx].data;
-		end if (avaliableCache == 0) begin
+		end else if (avaliableCache == 0) begin
 			dirtyAddr = cacheOne[reqAddr.idx].addr;
 			dirtyData = cacheOne[reqAddr.idx].data;
 		end else begin
@@ -487,7 +487,7 @@ import cpu_types_pkg::*;
 				// Flushing
 				nextState = FLUSH;
 
-			end else if (cif.ccwait == 1) begin 
+			end else if (cif.ccwait == 1 && cif.ccsnoopaddr != 0) begin 
 				nextState = SNOOP;
 
 			end else if (dcif.dmemREN == 0 && dcif.dmemWEN == 0) begin
@@ -605,7 +605,7 @@ import cpu_types_pkg::*;
 			// Stops the system
 			nextState = STOP;
 		end else if (currState == SNOOP) begin
-			nextState = (snpHit == 1) ? DIRTYCLEANA : DATAREQA;
+			nextState = (snpHit == 1) ? DIRTYCLEANA : IDLE;
 		end
 	end
 
