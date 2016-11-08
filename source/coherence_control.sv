@@ -30,7 +30,11 @@ module coherence_control (
 	W1MOD        = 4'h7,
 	W2MOD        = 4'h8,
 	W1WEN        = 4'h9,
-	W2WEN        = 4'hA
+	W2WEN        = 4'hA,
+	H1MOD        = 4'hB,
+	H2MOD        = 4'hC,
+	H1WEN        = 4'hD,
+	H2WEN        = 4'hE
 	} controllerState;
 
 	//inputs from CACHE  - 2 Bits each
@@ -87,6 +91,30 @@ module coherence_control (
 		end
 	end
 
+// ccwait comb
+// ----------------------------------------- //
+
+	//assign cif.ccwait[0] = ~cif.cctrans[1];
+	//assign cif.ccwait[1] = ~cif.cctrans[0];
+	always_comb begin
+		if (currState == IDLE) begin
+			//ccwaits 0 in IDLE
+			cif.ccwait[0] = 0;
+			cif.ccwait[1] = 0;
+		end else begin
+			if (currReq == 0) begin
+				//0 is requesting
+				cif.ccwait[0] = 1;
+				cif.ccwait[1] = 0;
+			end else begin
+				//1 is requesting
+				cif.ccwait[0] = 0;
+				cif.ccwait[1] = 1;
+			end
+		end
+	end
+
+
 
 // Coherence Controller Next State Logic
 // ----------------------------------------- //
@@ -113,7 +141,7 @@ module coherence_control (
 			nextState = R1;
 
 			if (currReq == 0) begin
-				if (cif.ccwrite[1] == 1) begin
+				if (cif.ccwrite[1] == 1 || cif.ccwrite[0] == 1) begin
 					nextState = W1MOD;
 				end else begin
 					nextState = R1;
@@ -129,29 +157,35 @@ module coherence_control (
 		end else if (currState == W1MOD) begin
 			nextState = W1MOD;
 			if (mcif.dwait == 0) begin
-				nextState = W2MOD;
+				nextState = H1MOD;
 			end
+
+		end else if (currState == H1MOD) begin
+			nextState = W2MOD;
 
 		end else if (currState == W2MOD) begin
 			nextState = DATAREADY1;
 			if (mcif.dwait == 0) begin
-				nextState = W2MOD;
+				nextState = H2MOD;
 			end
+
+		end else if (currState == H2MOD) begin
+			nextState = IDLE;
 
 		end else if (currState == R1) begin
 			nextState = R1;
 			if (mcif.dwait == 0) begin
-				nextState = R2;
+				nextState = DATAREADY1;
 			end
 
 		end else if (currState == R2) begin
 			nextState = R2;
 			if (mcif.dwait == 0) begin
-				nextState = DATAREADY1;
+				nextState = DATAREADY2;
 			end
 
 		end else if (currState == DATAREADY1) begin
-			nextState = DATAREADY2;
+			nextState = R2;
 			//
 
 		end else if (currState == DATAREADY2) begin
@@ -161,14 +195,20 @@ module coherence_control (
 		end else if (currState == W1WEN) begin
 			nextState = W1WEN;
 			if (mcif.dwait == 0) begin
-				nextState = W2WEN;
+				nextState = H1WEN;
 			end
+
+		end else if (currState == H1WEN) begin
+			nextState = W2WEN;
 
 		end else if (currState == W2WEN) begin
 			nextState = W2WEN;
 			if (mcif.dwait == 0) begin
-				nextState = IDLE;
+				nextState = H2WEN;
 			end
+
+		end else if (currState == H2WEN) begin
+			nextState = IDLE;
 
 		end else if (currState == INV) begin
 			nextState = IDLE;
@@ -185,21 +225,25 @@ module coherence_control (
 
 		// Defaults Here
 		nextReq     = 0;
+		
 		mcif.daddr  = 0;
 		mcif.dstore = 0;
-		cif.ccsnoopaddr[0] = 0;
-		cif.ccsnoopaddr[1] = 0;
+
 		cif.dload[0] = 0;
 		cif.dload[1] = 0;
 		cif.dwait[0] = 1;
 		cif.dwait[1] = 1;
+
 		cif.ccinv[0] = 0;
 		cif.ccinv[1] = 0;
+		cif.ccsnoopaddr[0] = 0;
+		cif.ccsnoopaddr[1] = 0;
 
 		// Keeping Junk Data Out of the FF's
 		nextReq   = currReq;
 		newRData1 = rdata1;
 		newRData2 = rdata2;
+
 
 		
 
@@ -237,9 +281,27 @@ module coherence_control (
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
+				cif.ccsnoopaddr[1] = cif.daddr[0];
 			end else if (currReq == 1) begin
 				mcif.daddr  = cif.daddr[0];
 				mcif.dstore = cif.dstore[0];
+				cif.ccsnoopaddr[0] = cif.daddr[1];
+			end
+
+		end else if (currState == H1MOD) begin
+			if (currReq == 0) begin
+				cif.dload[0] = rdata1;
+				cif.dwait[0] = 0;
+
+				cif.ccsnoopaddr[1] = cif.daddr[0];
+				cif.dwait[1] = 0;
+
+			end else if (currReq == 1) begin
+				cif.dload[1] = rdata1;
+				cif.dwait[1] = 0;
+				
+				cif.ccsnoopaddr[0] = cif.daddr[1];
+				cif.dwait[0] = 0;
 			end
 
 		// Writing Requestee Data Word Two
@@ -249,11 +311,28 @@ module coherence_control (
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
+				cif.ccsnoopaddr[1] = cif.daddr[0];
 			end else if (currReq == 1) begin
 				mcif.daddr  = cif.daddr[0];
 				mcif.dstore = cif.dstore[0];
+				cif.ccsnoopaddr[0] = cif.daddr[1];
 			end
 
+		end else if (currState == H2MOD) begin
+			if (currReq == 0) begin
+				cif.dload[0] = rdata2;
+				cif.dwait[0] = 0;
+
+				cif.ccsnoopaddr[1] = cif.daddr[0];
+				cif.dwait[1] = 0;
+
+			end else if (currReq == 1) begin
+				cif.dload[1] = rdata2;
+				cif.dwait[1] = 0;
+				
+				cif.ccsnoopaddr[0] = cif.daddr[1];
+				cif.dwait[0] = 0;
+			end
 		// Reading Memory Data Word one
 		end else if (currState == R1) begin
 			mcif.dREN = 1;
@@ -297,6 +376,37 @@ module coherence_control (
 		// Strictly Writing Data To Memory
 		end else if (currState == W1WEN) begin
 			mcif.dWEN = 1;
+			newRData1 = mcif.dload;
+			if (currReq == 0) begin
+				mcif.daddr = cif.daddr[0];
+				mcif.dstore = cif.dload[0];
+			end else if (currReq == 1) begin
+				mcif.daddr = cif.daddr[1];
+				mcif.dstore = cif.dload[1];
+			end
+
+		// Strictly Writing Data To Memory
+		end else if (currState == H1WEN) begin
+			if (currReq == 0) begin
+				cif.dwait[0] = 0;
+				cif.dload[0] = rdata1;
+			end else if (currReq == 1) begin
+				cif.dwait[1] = 0;
+				cif.dload[1] = rdata1;
+			end
+
+		end else if (currState == W2WEN) begin
+			mcif.dWEN = 1;
+			newRData2 = mcif.dload;
+			if (currReq == 0) begin
+				mcif.daddr = cif.daddr[0];
+				mcif.dstore = cif.dload[0];
+			end else if (currReq == 1) begin
+				mcif.daddr = cif.daddr[1];
+				mcif.dstore = cif.dload[1];
+			end
+		// Invalidating other data
+		end else if (currState == H2WEN) begin
 			if (currReq == 0) begin
 				cif.dwait[0] = 0;
 				cif.dload[0] = rdata2;
@@ -304,19 +414,14 @@ module coherence_control (
 				cif.dwait[1] = 0;
 				cif.dload[1] = rdata2;
 			end
-
-		// Strictly Writing Data To Memory
-		end else if (currState == W2WEN) begin
-
-		// Invalidating other data
 		end else if (currState == INV) begin
 			//not finished...
 			if (currReq == 0) begin
-				cif.ccinv[0] = 0;
 				cif.ccinv[1] = 1;
+				cif.ccsnoopaddr[1] = cif.daddr[0];
 			end else if (currReq == 1) begin
 				cif.ccinv[0] = 1;
-				cif.ccinv[1] = 0;
+				cif.ccsnoopaddr[0] = cif.daddr[1];
 			end
 		end
 	end

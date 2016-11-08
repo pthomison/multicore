@@ -42,10 +42,11 @@ import cpu_types_pkg::*;
 	DIRTYCLEANB  = 4'h5,
 	DATAREQA     = 4'h6,
 	DATAREQB     = 4'h7,
-	OVERWRITE    = 4'h8,
+	OVERWRITE    = 4'h8, 
 	HITSTATE     = 4'h9,
 	FLUSH        = 4'hA,
-	STOP         = 4'hB
+	STOP         = 4'hB,
+	SNOOP        = 4'hC
 	} controllerState;
 
 	typedef enum logic [1:0] {
@@ -61,7 +62,7 @@ import cpu_types_pkg::*;
 
 	logic recUsed [7:0];
 
-	dcachef_t reqAddr;
+	dcachef_t reqAddr, snpAddr;
 
 	//mload is cif.dload
 	//mstore is dcif.dmemstore
@@ -72,6 +73,8 @@ import cpu_types_pkg::*;
 	//updateRecentUsed - if 1 then recently used needs to be updated
 	//updateClean - if 1 then current data is clean, if 0 then dirty
 	logic updateRead, updateWrite, updateRecentUsed, updateClean;
+
+	logic snpHit, snpHitOne, snpHitTwo, snpCache;
 
 	//Address of word A, address of word B
 	word_t loadAddrA, loadAddrB;
@@ -109,6 +112,7 @@ import cpu_types_pkg::*;
 		if (dcif.halt == 0) begin
 			// Use the Address From Datapath
 			reqAddr        = dcachef_t'(dcif.dmemaddr);
+			snpAddr        = dcachef_t'(cif.ccsnoopaddr);
 		end else begin
 			// Independently Set Index for Flushing
 			reqAddr.idx    = flushIdxSelect;
@@ -139,6 +143,12 @@ import cpu_types_pkg::*;
 					if (cif.dwait == 0 && flushWord == 1) begin
 						cacheOne[reqAddr.idx].dirty       <= 0;
 					end
+				end
+			end
+
+			else if (snpHit == 1 && cif.ccwait == 1 && snpCache == 0) begin
+				if (cif.ccinv == 1) begin
+					cacheOne[snpAddr.idx].valid = 0;
 				end
 			end
 
@@ -234,6 +244,13 @@ import cpu_types_pkg::*;
 					end
 				end
 			end
+
+			else if (snpHit == 1 && cif.ccwait == 1 && snpCache == 1) begin
+				if (cif.ccinv == 1) begin
+					cacheTwo[snpAddr.idx].valid = 0;
+				end
+			end
+	
 			// Miss; Need to write to next avaliable slot
 			else if (prehit == 0) begin
 
@@ -336,6 +353,34 @@ import cpu_types_pkg::*;
 		end
 	end
 
+// Snooping
+// ----------------------------------------- //
+	always_comb begin
+		snpHitOne = (cacheOne[snpAddr.idx].addr.tag == snpAddr.tag) && (cacheOne[snpAddr.idx].valid == 1) && (cif.ccwait == 1);
+		snpHitTwo = (cacheTwo[snpAddr.idx].addr.tag == snpAddr.tag) && (cacheTwo[snpAddr.idx].valid == 1) && (cif.ccwait == 1);
+
+		snpHit = snpHitOne || snpHitTwo;
+		
+		snpCache  = 0;
+		if (snpHitOne == 1) begin
+			snpCache = 0;
+		end else if (snpHitTwo == 1) begin
+			snpCache = 1;
+		end
+	end
+
+// Invalidate
+// ----------------------------------------- //
+	// always_comb begin
+	// 	if (cif.ccinv == 1 && snpHit == 1) begin
+	// 		if (snpCache == 0) begin
+	// 			cacheOne[snpAddr.idx].valid = 0;
+	// 		end else begin
+	// 			cacheTwo[snpAddr.idx].valid = 0;
+	// 		end
+	// 	end
+	// end
+
 // Cache Data Gates
 // ----------------------------------------- //
 	assign cdataOne = (reqAddr.blkoff == 0) ? cacheOne[reqAddr.idx].data.wordA : cacheOne[reqAddr.idx].data.wordB;
@@ -366,7 +411,10 @@ import cpu_types_pkg::*;
 // Dirty Flags
 // ----------------------------------------- //
 	always_comb begin
-		if (avaliableCache == 0) begin
+		if (cif.ccwait == 1 && snpHit) begin
+			dirtyAddr = cif.ccsnoopaddr;
+			dirtyData = (snpCache == 0) ? cacheOne[snpAddr.idx].data : cacheTwo[snpAddr.idx].data;
+		end if (avaliableCache == 0) begin
 			dirtyAddr = cacheOne[reqAddr.idx].addr;
 			dirtyData = cacheOne[reqAddr.idx].data;
 		end else begin
@@ -439,6 +487,9 @@ import cpu_types_pkg::*;
 				// Flushing
 				nextState = FLUSH;
 
+			end else if (cif.ccwait == 1) begin 
+				nextState = SNOOP;
+
 			end else if (dcif.dmemREN == 0 && dcif.dmemWEN == 0) begin
 				// Idling
 				nextState = IDLE;
@@ -476,6 +527,9 @@ import cpu_types_pkg::*;
 			end else if (dcif.halt == 1) begin
 				// Flushing && Memory Ops are done
 				nextState = FLUSH;
+			end else if (cif.ccwait == 1 && snpHit == 1) begin
+
+				nextState = IDLE;
 			end else begin
 				// Memory Ops are done
 				nextState = DATAREQA;
@@ -550,6 +604,8 @@ import cpu_types_pkg::*;
 		end else if (currState == STOP) begin
 			// Stops the system
 			nextState = STOP;
+		end else if (currState == SNOOP) begin
+			nextState = (snpHit == 1) ? DIRTYCLEANA : DATAREQA;
 		end
 	end
 
@@ -655,6 +711,7 @@ end
 			cif.daddr     = dirtyAddr;
 			cif.dstore    = dirtyData.wordA;
 			flushWord     = 0;
+			cif.cctrans   = 1;
 
 		end else if (currState == DIRTYCLEANB) begin
 			// Writes Dirty Data (second word) Back To Memory
@@ -663,6 +720,7 @@ end
 			cif.daddr     = dirtyAddr + 4;
 			cif.dstore    = dirtyData.wordB;
 			flushWord     = 1;
+			cif.cctrans   = 1;
 
 		end else if (currState == DATAREQA) begin
 			// Requests First Block of Data
@@ -671,6 +729,7 @@ end
 			cif.daddr     = loadAddrA;
 			updateRead    = 1;
 			wordDestRead  = 0;
+			cif.cctrans   = 1;
 
 		end else if (currState == DATAREQB) begin
 			// Requests Second Block of Data
@@ -678,11 +737,15 @@ end
 			cif.daddr     = loadAddrB;
 			updateRead    = 1;
 			wordDestRead  = 1;
+			cif.cctrans   = 1;
 
 		end else if (currState == OVERWRITE) begin
 			// Writes in new write data, makes dirty
 			updateClean	  = 0;
 			updateWrite   = 1;
+			cif.cctrans   = 1;
+			cif.ccwrite   = 1;
+
 
 		end else if (currState == READHIT) begin
 			// Returns cached data to system && notifys system
@@ -694,6 +757,7 @@ end
 			// Write user data to cache && notifys system
 			dcif.dhit        = 1;
 			updateRecentUsed = 1;
+			cif.daddr     = reqAddr; //need to put address on line...
 
 		end else if (currState == FLUSH) begin
 			// Write any data to memory if dirty
@@ -710,6 +774,9 @@ end
 		// Stop
 			dcif.flushed  = 1;
 
+		end else if (currState == SNOOP) begin
+			cif.cctrans = 1;
+			cif.ccwrite = snpHit;
 		end
 	end
 

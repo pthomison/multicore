@@ -32,6 +32,16 @@ module coherence_control_tb;
 
   cpu_ram_if ramif();
 
+  //assigns
+  assign ramif.ramREN = mcif.ramREN;
+  assign ramif.ramWEN = mcif.ramWEN;
+  assign ramif.ramstore = mcif.ramstore;
+  assign ramif.ramaddr = mcif.ramaddr;
+
+  assign mcif.ramstate = ramif.ramstate;
+  assign mcif.ramload = ramif.ramload;
+
+
   // test program
   test PROG (CLK, nRST);
 
@@ -89,11 +99,11 @@ dcif1.datomic  = 0;
   // Reseting
   #(PERIOD*2);
   nRST = 0;
-  #(PERIOD*2);
+  #(PERIOD);
   nRST = 1;
   #(PERIOD);
 
-// testcase 1 - read
+// testcase 1 - read MISS 0
 // ----------------------------------------- //
   testcase = 1;
 
@@ -102,6 +112,65 @@ dcif1.datomic  = 0;
   dcif0.dmemaddr  = 32'h00000100;
 
   #(PERIOD*20);
+  dcif0.dmemREN   = 0;
+  dcif0.dmemaddr  = 32'h00000000;
+  #(PERIOD*10);
+
+
+
+// testcase 2 - read MISS 1
+// ----------------------------------------- //
+  testcase = 2;
+
+  //Intial Conditions
+  dcif1.dmemREN   = 1;
+  dcif1.dmemaddr  = 32'h0000A000;
+
+  #(PERIOD*20);
+  dcif1.dmemREN   = 0;
+  dcif1.dmemaddr  = 32'h00000000;
+  #(PERIOD*10);
+
+
+// testcase 3 - read MISS 1
+// ----------------------------------------- //
+  testcase = 3;
+
+  //Intial Conditions
+  dcif1.dmemREN   = 1;
+  dcif1.dmemaddr  = 32'h0000B000;
+  //dcif0.dmemstore  = 32'h0000ABCD;
+  
+  //#(PERIOD*1);
+  //dcif0.dmemWEN   = 0;
+  #(PERIOD*15);
+  dcif1.dmemREN   = 0;
+  dcif1.dmemaddr  = 32'h00000000;
+  //dcif0.dmemstore  = 32'h00000000;
+  #(PERIOD*10);
+
+
+
+
+// testcase 4 - write MISS 0
+// ----------------------------------------- //
+  testcase = 4;
+
+  //Intial Conditions
+  dcif0.dmemWEN   = 1;
+  dcif0.dmemaddr  = 32'h0000B000;
+  dcif0.dmemstore  = 32'h0000ABCD;
+  
+  //#(PERIOD*1);
+  //dcif0.dmemWEN   = 0;
+  #(PERIOD*25);
+  dcif0.dmemWEN   = 0;
+  dcif0.dmemaddr  = 32'h00000000;
+  dcif0.dmemstore  = 32'h00000000;
+  #(PERIOD*10);
+
+
+
 
 
 end

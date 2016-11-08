@@ -1,11 +1,11 @@
 halt
 
 org 0x00000100
-cfw 80
-cfw 160
-cfw 240
-cfw 320
-cfw 400
+cfw 0x80
+cfw 0x160
+cfw 0x240
+cfw 0x320
+cfw 0x400
 
 org 0x0000a000
 cfw 1
