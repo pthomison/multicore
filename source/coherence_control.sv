@@ -314,7 +314,7 @@ module coherence_control (
 		// Writing Requestee Data Word One
 		end else if (currState == W1MOD) begin
 			mcif.dWEN = 1;
-			newRData1 = mcif.dload;
+			newRData1 = ccif.dstore[!currReq];
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
@@ -344,7 +344,7 @@ module coherence_control (
 		// Writing Requestee Data Word Two
 		end else if (currState == W2MOD) begin
 			mcif.dWEN = 1;
-			newRData2 = mcif.dload;
+			newRData2 = ccif.dstore[!currReq];
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
@@ -416,10 +416,10 @@ module coherence_control (
 			newRData1 = mcif.dload;
 			if (currReq == 0) begin
 				mcif.daddr = cif.daddr[0];
-				mcif.dstore = cif.dload[0];
+				mcif.dstore = cif.dstore[0];
 			end else if (currReq == 1) begin
 				mcif.daddr = cif.daddr[1];
-				mcif.dstore = cif.dload[1];
+				mcif.dstore = cif.dstore[1];
 			end
 
 		// Strictly Writing Data To Memory
@@ -437,10 +437,10 @@ module coherence_control (
 			newRData2 = mcif.dload;
 			if (currReq == 0) begin
 				mcif.daddr = cif.daddr[0];
-				mcif.dstore = cif.dload[0];
+				mcif.dstore = cif.dstore[0];
 			end else if (currReq == 1) begin
 				mcif.daddr = cif.daddr[1];
-				mcif.dstore = cif.dload[1];
+				mcif.dstore = cif.dstore[1];
 			end
 		// Invalidating other data
 		end else if (currState == H2WEN) begin
