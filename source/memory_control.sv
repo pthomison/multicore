@@ -41,6 +41,7 @@ always_comb begin
   mcif.iwait = 1;
   mcif.ramstore = mcif.dstore;
 
+  //data read
   if (mcif.dREN) begin
     mcif.ramaddr = mcif.daddr;
     mcif.ramREN = 1;
@@ -55,9 +56,8 @@ always_comb begin
       mcif.iwait = 1;
     end
 
-
-  end
-  else if (mcif.dWEN) begin
+  //data write
+  end else if (mcif.dWEN) begin
     mcif.ramstore = mcif.dstore;
     mcif.ramaddr = mcif.daddr;
     mcif.ramREN = 0;
@@ -72,9 +72,8 @@ always_comb begin
       mcif.iwait = 1;
     end
 
-
-  end
-  else if (mcif.iREN) begin
+  //instruction read
+  end else if (mcif.iREN) begin
     mcif.ramaddr = mcif.iaddr;
     mcif.ramREN = 1;
     mcif.ramWEN = 0;
@@ -88,6 +87,5 @@ always_comb begin
       mcif.iwait = 1;
     end
   end
-
 end
 endmodule

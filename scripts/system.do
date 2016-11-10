@@ -66,13 +66,9 @@ add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/RF/register
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/CLK
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/dpif/halt
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/nRST
-add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/immedEXT
-add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/PCplus4
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/temphalt
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/ifid_temp_flush_enable
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/pcif_enable_temp
-add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/ifid_enable_temp
-add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/pcsrcFF
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/outport_temp
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/wdat_temp
 add wave -noupdate -group DP0 /system_tb/DUT/CPU/DP0/idex_temp_flush_enable
@@ -87,13 +83,9 @@ add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/RF/register
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/CLK
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/dpif/halt
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/nRST
-add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/immedEXT
-add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/PCplus4
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/temphalt
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/ifid_temp_flush_enable
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/pcif_enable_temp
-add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/ifid_enable_temp
-add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/pcsrcFF
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/outport_temp
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/wdat_temp
 add wave -noupdate -group DP1 /system_tb/DUT/CPU/DP1/idex_temp_flush_enable
@@ -279,14 +271,10 @@ add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/currState
 add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/nextState
 add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/currReq
 add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/nextReq
-add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/rdata1
-add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/rdata2
-add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/newRData1
-add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/newRData2
 add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/lastUsedIcache
 add wave -noupdate -group Coherence /system_tb/DUT/CPU/CC/COHCON/NextCache
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {652861 ps} 0}
+WaveRestoreCursors {{Cursor 1} {656942532 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 428
 configure wave -valuecolwidth 100
@@ -302,4 +290,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {630338 ps} {715568 ps}
+WaveRestoreZoom {656939032 ps} {657024262 ps}

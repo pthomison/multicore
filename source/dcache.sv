@@ -57,16 +57,14 @@ import cpu_types_pkg::*;
 
 // Module Variables
 // ----------------------------------------- //
-	frame cacheOne [7:0];
-	frame cacheTwo [7:0];
+	frame cacheOne [7:0];			//Cache Frame One
+	frame cacheTwo [7:0];			//Cache Frame Two
+	word_t loadAddrA, loadAddrB;	//Address of word A, address of word B
+	logic recUsed [7:0];			//least recently used cache
 
-	logic recUsed [7:0];
+	dcachef_t reqAddr, snpAddr;		//The Requesting address, snooping address
 
-	dcachef_t reqAddr, snpAddr;
-
-	//mload is cif.dload
-	//mstore is dcif.dmemstore
-	word_t mload, mstore;
+	word_t mload, mstore;			//mload is cif.dload, mstore is dcif.dmemstore
 
 	//updateRead - if 1 then read from memory
 	//updateWrite - if 1 then overwriting data in a cache
@@ -74,20 +72,15 @@ import cpu_types_pkg::*;
 	//updateClean - if 1 then current data is clean, if 0 then dirty
 	logic updateRead, updateWrite, updateRecentUsed, updateClean;
 
+	//SNOOP stuff
 	logic snpHit, snpHitOne, snpHitTwo, snpCache, snpClean;
-
-	//Address of word A, address of word B
-	word_t loadAddrA, loadAddrB;
-
-	// 0 for cache1, 1 for cache2
-	logic avaliableCache;
-
-	logic destinationDirty;
+	logic avaliableCache;			// 0 for cache1, 1 for cache2
+	logic destinationDirty;			//1 if current cache block is dirty
 
 	logic prehitOne, prehitTwo, prehit;
 	logic validOne, validTwo;
 	logic wordDestRead, wordDestWrite;
-	//flushCacheSelect = 0 for cache1, 1 for cache2
+
 	logic flushCacheSelect;
 	logic [2:0] flushIdxSelect;
 	logic hitCache;
@@ -98,13 +91,11 @@ import cpu_types_pkg::*;
 	word_t hitcount, thitcount;
 	word_t misscount, tmisscount;
 
-	block dirtyData;
-	word_t dirtyAddr;
+	block dirtyData;				//Dirty Block
+	word_t dirtyAddr;				//Address of dirty block
 
 	controllerState currState;
 	controllerState nextState;
-
-
 
 // Request Address Selection
 // ----------------------------------------- //
@@ -157,10 +148,7 @@ import cpu_types_pkg::*;
 
 			// Miss; Need to write to next avaliable slot
 			else if (prehit == 0) begin
-				
-
 				if (avaliableCache == 0) begin
-
 					// marks the dirty bit
 					if (updateClean == 1) begin
 						cacheOne[reqAddr.idx].dirty       <= 0;
@@ -200,11 +188,8 @@ import cpu_types_pkg::*;
 				end
 			end
 
-
-
 			// Hit; Need to write to reg if it is a write
 			else begin
-
 				if (hitCache == 0) begin
 					// marks the dirty bit
 					if (updateClean == 1) begin
@@ -226,11 +211,7 @@ import cpu_types_pkg::*;
 						end
 					end
 				end
-
-
 			end
-
-
 		end
 	end
 
@@ -259,15 +240,12 @@ import cpu_types_pkg::*;
 	
 			// Miss; Need to write to next avaliable slot
 			else if (prehit == 0) begin
-
 				if (avaliableCache == 1) begin
 					if (updateClean == 1) begin
 						cacheTwo[reqAddr.idx].dirty       <= 0;
 					end
 
 					if (updateRead == 1) begin
-
-
 						if (wordDestRead == 0) begin
 							cacheTwo[reqAddr.idx].data.wordA <= mload;
 						end else begin
@@ -302,8 +280,6 @@ import cpu_types_pkg::*;
 
 			// Hit; Need to write to reg if it is a write
 			else begin
-
-
 				if (hitCache == 1) begin
 					if (updateClean == 1) begin
 						cacheTwo[reqAddr.idx].dirty       <= 0;
@@ -322,11 +298,8 @@ import cpu_types_pkg::*;
 							cacheTwo[reqAddr.idx].data.wordB <= mstore;
 						end
 					end
-
-
 				end
 			end
-
 		end
 	end
 
@@ -513,8 +486,18 @@ import cpu_types_pkg::*;
 				// Any Miss; Destination is NOT dirty
 				nextState = DATAREQA;
 
-			end else if (destinationDirty == 1) begin
+			end else if (destinationDirty == 1 && dcif.dmemWEN == 1) begin
 				// Any Miss; Destination IS dirty
+
+				/*
+				previous line here was 
+					end else if (destinationDirty == 1) begin
+				TA told me that our DCache is doing WRITE THROUGH instead of WRITE BACK
+				added the "&& dcif.dmemWEN == 1" to fix this
+				we were writing memory back anytime it was dirty
+				need to just write back when cahce is going to replace with new data (new address, new tag same index)
+				*/
+
 				nextState = DIRTYCLEANA;
 
 			end
@@ -615,7 +598,6 @@ import cpu_types_pkg::*;
 		end
 	end
 
-
 always_comb begin
 		flushCacheSelect = 0;
 		flushIdxSelect   = 0;
@@ -675,16 +657,14 @@ always_comb begin
 	end
 end
 
-
 // MSI State Shortcuts
-always_comb begin
+//always_comb begin
 	
-end
+//end
 
 // Cache Controller Control Signals
 // ----------------------------------------- //
 	always_comb begin
-
 		// DCIF Defaults
 		dcif.dhit     = 0;
 		dcif.dmemload = 0;
@@ -706,7 +686,6 @@ end
 		updateClean		   = 0; //new
 		flushWord        = 0;
 		snpClean         = 0;
-
 
 		if (currState == IDLE) begin
 			// do nothing
@@ -754,7 +733,6 @@ end
 			cif.cctrans   = 1;
 			cif.ccwrite   = 1;
 
-
 		end else if (currState == READHIT) begin
 			// Returns cached data to system && notifys system
 			dcif.dhit        = 1;
@@ -773,7 +751,6 @@ end
 			// flushCacheSelect = 0;
 			// flushIdxSelect   = 0;
 
-
 		end else if (currState == HITSTATE) begin
 			//cif.dWEN      = 1;
 			//cif.daddr     = 32'h00003100;
@@ -787,5 +764,4 @@ end
 			cif.ccwrite = snpHit;
 		end
 	end
-
 endmodule

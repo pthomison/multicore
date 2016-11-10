@@ -52,8 +52,8 @@ module coherence_control (
 	controllerState nextState;
 
 	logic currReq, nextReq;
-	word_t rdata1, rdata2;
-	word_t newRData1, newRData2;
+	word_t rdata;
+	word_t newRData;
 	logic lastUsedIcache;
 	logic NextCache;
 
@@ -69,7 +69,6 @@ module coherence_control (
 		end
 	end
 
-
 // Snoop Flip Flop
 // ----------------------------------------- //
 	always_ff @(posedge CLK, negedge nRST) begin
@@ -84,19 +83,14 @@ module coherence_control (
 // ----------------------------------------- //
 	always_ff @(posedge CLK, negedge nRST) begin
 		if(nRST == 0) begin
-			rdata1  <= 0;
-			rdata2  <= 0;
+			rdata  <= 0;
 		end else begin
-			rdata1 <= newRData1;
-			rdata2 <= newRData2;
+			rdata <= newRData;
 		end
 	end
 
 // ccwait comb
 // ----------------------------------------- //
-
-	//assign cif.ccwait[0] = ~cif.cctrans[1];
-	//assign cif.ccwait[1] = ~cif.cctrans[0];
 	always_comb begin
 		cif.ccwait[0] = 0;
 		cif.ccwait[1] = 0;
@@ -120,7 +114,6 @@ module coherence_control (
 
 // Next Cache Flip Flop and Comb
 // ----------------------------------------- //
-
 	always_ff @(posedge CLK, negedge nRST) begin
 		if(!nRST) begin
 			NextCache <= 0;
@@ -155,7 +148,6 @@ module coherence_control (
 
 		if (!nRST) begin
 			//nextState = IDLE;
-
 
 		end else if (currState == IDLE) begin
 			if ((cif.dREN[0] == 1 && cif.cctrans[0] == 1) || (cif.dREN[1] == 1 && cif.cctrans[1] == 1)) begin
@@ -252,7 +244,6 @@ module coherence_control (
 	end
 
 
-
 // Coherence Controller Control Signals
 // ----------------------------------------- //
 	always_comb begin
@@ -278,11 +269,8 @@ module coherence_control (
 
 		// Keeping Junk Data Out of the FF's
 		nextReq   = currReq;
-		newRData1 = rdata1;
-		newRData2 = rdata2;
-
-
-		
+		newRData = rdata;
+		newRData = rdata;
 
 		if (currState == IDLE) begin
 			//To SNOOP state
@@ -314,7 +302,7 @@ module coherence_control (
 		// Writing Requestee Data Word One
 		end else if (currState == W1MOD) begin
 			mcif.dWEN = 1;
-			newRData1 = ccif.dstore[!currReq];
+			newRData = ccif.dstore[!currReq];
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
@@ -327,14 +315,14 @@ module coherence_control (
 
 		end else if (currState == H1MOD) begin
 			if (currReq == 0) begin
-				cif.dload[0] = rdata1;
+				cif.dload[0] = rdata;
 				cif.dwait[0] = 0;
 
 				cif.ccsnoopaddr[1] = cif.daddr[0];
 				cif.dwait[1] = 0;
 
 			end else if (currReq == 1) begin
-				cif.dload[1] = rdata1;
+				cif.dload[1] = rdata;
 				cif.dwait[1] = 0;
 				
 				cif.ccsnoopaddr[0] = cif.daddr[1];
@@ -344,7 +332,7 @@ module coherence_control (
 		// Writing Requestee Data Word Two
 		end else if (currState == W2MOD) begin
 			mcif.dWEN = 1;
-			newRData2 = ccif.dstore[!currReq];
+			newRData = ccif.dstore[!currReq];
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
@@ -357,14 +345,14 @@ module coherence_control (
 
 		end else if (currState == H2MOD) begin
 			if (currReq == 0) begin
-				cif.dload[0] = rdata2;
+				cif.dload[0] = rdata;
 				cif.dwait[0] = 0;
 
 				cif.ccsnoopaddr[1] = cif.daddr[0];
 				cif.dwait[1] = 0;
 
 			end else if (currReq == 1) begin
-				cif.dload[1] = rdata2;
+				cif.dload[1] = rdata;
 				cif.dwait[1] = 0;
 				
 				cif.ccsnoopaddr[0] = cif.daddr[1];
@@ -373,7 +361,7 @@ module coherence_control (
 		// Reading Memory Data Word one
 		end else if (currState == R1) begin
 			mcif.dREN = 1;
-			newRData1 = mcif.dload;
+			newRData = mcif.dload;
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[0];
 			end else if (currReq == 1) begin
@@ -383,7 +371,7 @@ module coherence_control (
 		// Reading Memory Data Word Two
 		end else if (currState == R2) begin
 			mcif.dREN = 1;
-			newRData2 = mcif.dload;
+			newRData = mcif.dload;
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[0];
 			end else if (currReq == 1) begin
@@ -394,26 +382,26 @@ module coherence_control (
 		end else if (currState == DATAREADY1) begin
 			if (currReq == 0) begin
 				cif.dwait[0] = 0;
-				cif.dload[0] = newRData1;
+				cif.dload[0] = newRData;
 			end else if (currReq == 1) begin
 				cif.dwait[1] = 0;
-				cif.dload[1] = newRData1;
+				cif.dload[1] = newRData;
 			end
 
 		// Sending Read Data To Cache
 		end else if (currState == DATAREADY2) begin
 			if (currReq == 0) begin
 				cif.dwait[0] = 0;
-				cif.dload[0] = newRData2;
+				cif.dload[0] = newRData;
 			end else if (currReq == 1) begin
 				cif.dwait[1] = 0;
-				cif.dload[1] = newRData2;
+				cif.dload[1] = newRData;
 			end
 
 		// Strictly Writing Data To Memory
 		end else if (currState == W1WEN) begin
 			mcif.dWEN = 1;
-			newRData1 = mcif.dload;
+			newRData = mcif.dload;
 			if (currReq == 0) begin
 				mcif.daddr = cif.daddr[0];
 				mcif.dstore = cif.dstore[0];
@@ -426,15 +414,15 @@ module coherence_control (
 		end else if (currState == H1WEN) begin
 			if (currReq == 0) begin
 				cif.dwait[0] = 0;
-				cif.dload[0] = rdata1;
+				cif.dload[0] = rdata;
 			end else if (currReq == 1) begin
 				cif.dwait[1] = 0;
-				cif.dload[1] = rdata1;
+				cif.dload[1] = rdata;
 			end
 
 		end else if (currState == W2WEN) begin
 			mcif.dWEN = 1;
-			newRData2 = mcif.dload;
+			newRData = mcif.dload;
 			if (currReq == 0) begin
 				mcif.daddr = cif.daddr[0];
 				mcif.dstore = cif.dstore[0];
@@ -446,10 +434,10 @@ module coherence_control (
 		end else if (currState == H2WEN) begin
 			if (currReq == 0) begin
 				cif.dwait[0] = 0;
-				cif.dload[0] = rdata2;
+				cif.dload[0] = rdata;
 			end else if (currReq == 1) begin
 				cif.dwait[1] = 0;
-				cif.dload[1] = rdata2;
+				cif.dload[1] = rdata;
 			end
 		end else if (currState == INV) begin
 			//not finished...
@@ -465,9 +453,8 @@ module coherence_control (
 
 	
 	// ICache Handling
-	always_comb begin
+	//always_comb begin
 	  
-	end
-
+	//end
 
 endmodule

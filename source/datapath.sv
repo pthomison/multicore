@@ -17,6 +17,7 @@ MULTICORE MULTICORE MULTICORE
 	// alu op, mips op, and instruction type
 	`include "cpu_types_pkg.vh"
 
+	// Module IF files
 	`include "pc_if.vh"
 	`include "register_file_if.vh"
 	`include "control_unit_if.vh"
@@ -34,12 +35,10 @@ MULTICORE MULTICORE MULTICORE
 	  // import types
 	  import cpu_types_pkg::*;
 
-	  parameter PC_INIT = 0;
-
 // Module Init
 // ----------------------------------------- //
-  // pc init
-  //parameter PC_INIT = 0;
+  // pc init for multicore
+  parameter PC_INIT = 0;
 
 // Child Module Instantiation
 // ----------------------------------------- //
@@ -82,22 +81,20 @@ MULTICORE MULTICORE MULTICORE
 
 // Module Variables
 // ----------------------------------------- //
-	// unknown, please sort
-	word_t immedEXT;
-	word_t PCplus4; //not used
-	logic temphalt;
-	logic ifid_temp_flush_enable;
-	logic pcif_enable_temp;
-	logic ifid_enable_temp; //not used
-	logic [1:0] pcsrcFF; //not used
-	word_t outport_temp;
-	word_t wdat_temp;
-	logic idex_temp_flush_enable;
-	logic dwen_temp, rwen_temp;
-	word_t inst_temp;
-	regbits_t wsel_temp;
-	word_t temp_rdat2;
-	logic stall;
+
+	//halt flipflop and exm_plif stall
+	logic temphalt, stall;
+
+	//Enables
+	logic ifid_temp_flush_enable, pcif_enable_temp, idex_temp_flush_enable;
+
+	//Temp Variables
+	logic dwen_temp; 		//idex_plif.dWEN_in temp
+	logic rwen_temp; 		//idex_plif.WEN_in temp
+	regbits_t wsel_temp; 	//exm_plif.wsel_in temp
+	word_t inst_temp; 		//idex_plif.instruction_in temp
+	word_t temp_rdat2; 		//aluif.rdat2 temp
+	word_t outport_temp, wdat_temp;	//alu temp
 
 // Module Outputs
 // ----------------------------------------- //
@@ -120,7 +117,6 @@ MULTICORE MULTICORE MULTICORE
 		end
 	end
 	assign dpif.halt = temphalt;
-
 
 // Instruction Fetch Stage
 // ----------------------------------------- //	
@@ -146,7 +142,6 @@ MULTICORE MULTICORE MULTICORE
 	// ----------------------------------------- //
 	assign cuif.instruction = ifid_plif.instruction_out;
 
-
 	// Register File Inputs
 	// ----------------------------------------- //
 	assign rfif.WEN   = mwb_plif.WEN_out;
@@ -158,14 +153,11 @@ MULTICORE MULTICORE MULTICORE
 	always_comb begin
 		if (mwb_plif.LUI_out) begin
 			wdat_temp = {mwb_plif.immed_out, 16'h0000};
-		end
-		else if (mwb_plif.MemtoReg_out) begin
+		end	else if (mwb_plif.MemtoReg_out) begin
 			wdat_temp = mwb_plif.dmemload_out;
-		end
-		else if (mwb_plif.jal_out) begin
+		end	else if (mwb_plif.jal_out) begin
 			wdat_temp = mwb_plif.pcout_out + 4;
-		end
-		else begin
+		end	else begin
 			wdat_temp = mwb_plif.outport_out;
 		end
 	end
@@ -197,7 +189,6 @@ MULTICORE MULTICORE MULTICORE
 			2: temp_rdat2 = exm_plif.outport_out;
 			default: temp_rdat2 = idex_plif.rdat2_out;
 		endcase
-
 	end
 
 	assign aluif.rdat2 = temp_rdat2;
@@ -208,10 +199,8 @@ MULTICORE MULTICORE MULTICORE
 // Write Back Stage
 // ----------------------------------------- //
 
-
 // Stall Block
 // ----------------------------------------- //
-
 	always_comb begin
 		stall = 0;
 		exm_plif.clearMemReq = 0;
@@ -226,7 +215,6 @@ MULTICORE MULTICORE MULTICORE
 			stall = 1;
 		end 
 	end
-
 
 // Forwarding Unit Inputs
 // ----------------------------------------- //
@@ -261,20 +249,17 @@ MULTICORE MULTICORE MULTICORE
 	assign ifid_plif.rs_in          = dpif.imemload[25:21];
 	assign ifid_plif.rt_in          = dpif.imemload[20:16];
 
-
 	// IDEX
 	// ----------------------------------------- //
 	always_comb 
 	begin
 		if (huif.lw_nop == 1) begin
 			dwen_temp = 0;
-			//dren_temp = 0;
 			rwen_temp = 0;
 			inst_temp = 32'h00000000;
 		end else begin
 			dwen_temp = cuif.dWEN;
 			rwen_temp = cuif.WEN;
-			//dren_temp = cuif.dren;
 			inst_temp = ifid_plif.instruction_out;
 		end
 	end
@@ -314,8 +299,6 @@ MULTICORE MULTICORE MULTICORE
 	assign exm_plif.immed_in    = idex_plif.immed_out;
 	assign exm_plif.zero_f_in   = aluif.zero_f;
 
-
-
 	always_comb begin
 		if (idex_plif.LUI_out) begin
 			outport_temp = {idex_plif.immed_out,16'h0000};
@@ -329,16 +312,15 @@ MULTICORE MULTICORE MULTICORE
 		casez(idex_plif.RegDest_out)
 			0: wsel_temp = idex_plif.rd_out; // if RD
 			1: wsel_temp = idex_plif.rt_out; // if RT
-			2: wsel_temp = 31;                // if REG31 
+			2: wsel_temp = 31;               // if REG31 
 			default: wsel_temp = idex_plif.rd_out;
 	endcase
 	end
 
 	assign exm_plif.outport_in  = outport_temp;
 
-
 	assign exm_plif.wsel_in     = wsel_temp;
-	assign exm_plif.rdat2_in    = temp_rdat2; //idex_plif.rdat2_out;
+	assign exm_plif.rdat2_in    = temp_rdat2;
 	assign exm_plif.halt_in     = idex_plif.halt_out;
 	assign exm_plif.rd_in       = idex_plif.rd_out;
 	assign exm_plif.rt_in       = idex_plif.rt_out;
@@ -383,20 +365,19 @@ MULTICORE MULTICORE MULTICORE
 	// IFID
 	// ----------------------------------------- //
 	assign ifid_plif.enable = dpif.ihit && !stall && !huif.lw_nop;
-	assign ifid_temp_flush_enable = dpif.ihit && !stall && !huif.lw_nop;//(exm_plif.dREN_out || exm_plif.dWEN_out)  ? dpif.dhit:  dpif.ihit;
-	assign ifid_plif.flush  = ( huif.jmp_flush || huif.brch_flush ) && ifid_temp_flush_enable; // UPDATE FOR PC_CHG INSTR
+	assign ifid_temp_flush_enable = dpif.ihit && !stall && !huif.lw_nop;
+	assign ifid_plif.flush  = ( huif.jmp_flush || huif.brch_flush ) && ifid_temp_flush_enable; 
 
 	// IDEX
 	// ----------------------------------------- //
-
 	assign idex_plif.enable  = dpif.ihit && !stall;
-	assign idex_temp_flush_enable = dpif.ihit && !stall && !huif.lw_nop;//(exm_plif.dREN_out || exm_plif.dWEN_out)  ? dpif.dhit:  dpif.ihit;
-	assign idex_plif.flush   = (huif.jmp_flush || huif.brch_flush ) && idex_temp_flush_enable; // UPDATE FOR PC_CHG INSTR
+	assign idex_temp_flush_enable = dpif.ihit && !stall && !huif.lw_nop;
+	assign idex_plif.flush   = (huif.jmp_flush || huif.brch_flush ) && idex_temp_flush_enable; 
 
 	// EXM
 	// ----------------------------------------- //
 	assign exm_plif.enable = dpif.ihit && !stall;
-	assign exm_plif.flush  = 0; // UPDATE FOR PC_CHG INSTR
+	assign exm_plif.flush  = 0;
 
 	// MWB
 	// ----------------------------------------- //
