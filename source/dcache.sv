@@ -31,6 +31,11 @@ import cpu_types_pkg::*;
 		logic     dirty;
 	} frame;
 
+	typedef struct packed {
+		word_t addr;
+		logic  valid;
+	} linkReg;
+
 // Module Enums
 // ----------------------------------------- //
 	typedef enum logic [3:0] {
@@ -49,16 +54,14 @@ import cpu_types_pkg::*;
 	SNOOP        = 4'hC
 	} controllerState;
 
-	typedef enum logic [1:0] {
-		MOD = 2'b11,
-		SHD = 2'b10,
-		INV = 2'b01
-	} frameState;
-
 // Module Variables
 // ----------------------------------------- //
 	frame cacheOne [7:0];			//Cache Frame One
 	frame cacheTwo [7:0];			//Cache Frame Two
+
+	linkReg linkRegister;
+	linkReg nextLinkRegister;
+
 	word_t loadAddrA, loadAddrB;	//Address of word A, address of word B
 	logic recUsed [7:0];			//least recently used cache
 
@@ -91,8 +94,8 @@ import cpu_types_pkg::*;
 	word_t hitcount, thitcount;
 	word_t misscount, tmisscount;
 
-	block dirtyData;				//Dirty Block
-	word_t dirtyAddr;				//Address of dirty block
+	block dirtyData;
+	word_t dirtyAddr;
 
 	controllerState currState;
 	controllerState nextState;
@@ -314,6 +317,16 @@ import cpu_types_pkg::*;
 		end
 	end
 
+// Link Register Flip Flop
+// ----------------------------------------- //
+	always_ff @(posedge CLK, negedge nRST) begin
+		if(nRST == 0) begin
+			linkRegister <= '{default:'0};
+		end else begin
+			linkRegister <= nextLinkRegister;
+		end
+	end
+
 // Prehit Gates
 // ----------------------------------------- //
 	always_comb begin
@@ -347,18 +360,6 @@ import cpu_types_pkg::*;
 			snpCache = 1;
 		end
 	end
-
-// Invalidate
-// ----------------------------------------- //
-	// always_comb begin
-	// 	if (cif.ccinv == 1 && snpHit == 1) begin
-	// 		if (snpCache == 0) begin
-	// 			cacheOne[snpAddr.idx].valid = 0;
-	// 		end else begin
-	// 			cacheTwo[snpAddr.idx].valid = 0;
-	// 		end
-	// 	end
-	// end
 
 // Cache Data Gates
 // ----------------------------------------- //
@@ -598,69 +599,66 @@ import cpu_types_pkg::*;
 		end
 	end
 
-always_comb begin
-		flushCacheSelect = 0;
-		flushIdxSelect   = 0;
-	if (dcif.halt) begin
-		if (cacheOne[0].dirty == 1) begin
+// Flush Selection Logic
+// ----------------------------------------- //
+	always_comb begin
 			flushCacheSelect = 0;
 			flushIdxSelect   = 0;
-		end else if (cacheOne[1].dirty == 1) begin
-			flushCacheSelect = 0;
-			flushIdxSelect   = 1;
-		end else if (cacheOne[2].dirty == 1) begin
-			flushCacheSelect = 0;
-			flushIdxSelect   = 2;
-		end else if (cacheOne[3].dirty == 1) begin
-			flushCacheSelect = 0;
-			flushIdxSelect   = 3;
-		end else if (cacheOne[4].dirty == 1) begin
-			flushCacheSelect = 0;
-			flushIdxSelect   = 4;
-		end else if (cacheOne[5].dirty == 1) begin
-			flushCacheSelect = 0;
-			flushIdxSelect   = 5;
-		end else if (cacheOne[6].dirty == 1) begin
-			flushCacheSelect = 0;
-			flushIdxSelect   = 6;
-		end else if (cacheOne[7].dirty == 1) begin
-			flushCacheSelect = 0;
-			flushIdxSelect   = 7;
-		end else if (cacheTwo[0].dirty == 1) begin
-			flushCacheSelect = 1;
-			flushIdxSelect   = 0;
-		end else if (cacheTwo[1].dirty == 1) begin
-			flushCacheSelect = 1;
-			flushIdxSelect   = 1;
-		end else if (cacheTwo[2].dirty == 1) begin
-			flushCacheSelect = 1;
-			flushIdxSelect   = 2;
-		end else if (cacheTwo[3].dirty == 1) begin
-			flushCacheSelect = 1;
-			flushIdxSelect   = 3;
-		end else if (cacheTwo[4].dirty == 1) begin
-			flushCacheSelect = 1;
-			flushIdxSelect   = 4;
-		end else if (cacheTwo[5].dirty == 1) begin
-			flushCacheSelect = 1;
-			flushIdxSelect   = 5;
-		end else if	(cacheTwo[6].dirty == 1) begin
-			flushCacheSelect = 1;
-			flushIdxSelect   = 6;
-		end else if (cacheTwo[7].dirty == 1) begin
-			flushCacheSelect = 1;
-			flushIdxSelect   = 7;
+		if (dcif.halt) begin
+			if (cacheOne[0].dirty == 1) begin
+				flushCacheSelect = 0;
+				flushIdxSelect   = 0;
+			end else if (cacheOne[1].dirty == 1) begin
+				flushCacheSelect = 0;
+				flushIdxSelect   = 1;
+			end else if (cacheOne[2].dirty == 1) begin
+				flushCacheSelect = 0;
+				flushIdxSelect   = 2;
+			end else if (cacheOne[3].dirty == 1) begin
+				flushCacheSelect = 0;
+				flushIdxSelect   = 3;
+			end else if (cacheOne[4].dirty == 1) begin
+				flushCacheSelect = 0;
+				flushIdxSelect   = 4;
+			end else if (cacheOne[5].dirty == 1) begin
+				flushCacheSelect = 0;
+				flushIdxSelect   = 5;
+			end else if (cacheOne[6].dirty == 1) begin
+				flushCacheSelect = 0;
+				flushIdxSelect   = 6;
+			end else if (cacheOne[7].dirty == 1) begin
+				flushCacheSelect = 0;
+				flushIdxSelect   = 7;
+			end else if (cacheTwo[0].dirty == 1) begin
+				flushCacheSelect = 1;
+				flushIdxSelect   = 0;
+			end else if (cacheTwo[1].dirty == 1) begin
+				flushCacheSelect = 1;
+				flushIdxSelect   = 1;
+			end else if (cacheTwo[2].dirty == 1) begin
+				flushCacheSelect = 1;
+				flushIdxSelect   = 2;
+			end else if (cacheTwo[3].dirty == 1) begin
+				flushCacheSelect = 1;
+				flushIdxSelect   = 3;
+			end else if (cacheTwo[4].dirty == 1) begin
+				flushCacheSelect = 1;
+				flushIdxSelect   = 4;
+			end else if (cacheTwo[5].dirty == 1) begin
+				flushCacheSelect = 1;
+				flushIdxSelect   = 5;
+			end else if	(cacheTwo[6].dirty == 1) begin
+				flushCacheSelect = 1;
+				flushIdxSelect   = 6;
+			end else if (cacheTwo[7].dirty == 1) begin
+				flushCacheSelect = 1;
+				flushIdxSelect   = 7;
+			end
+		end else begin
+			flushCacheSelect = 1'bx;
+			flushIdxSelect = 1'bx;
 		end
-	end else begin
-		flushCacheSelect = 1'bx;
-		flushIdxSelect = 1'bx;
 	end
-end
-
-// MSI State Shortcuts
-//always_comb begin
-	
-//end
 
 // Cache Controller Control Signals
 // ----------------------------------------- //
@@ -683,7 +681,7 @@ end
 		updateRead       = 0;
 		updateWrite      = 0;
 		updateRecentUsed = 0;
-		updateClean		   = 0; //new
+		updateClean		 = 0;
 		flushWord        = 0;
 		snpClean         = 0;
 
