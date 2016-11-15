@@ -97,6 +97,8 @@ import cpu_types_pkg::*;
 	block dirtyData;
 	word_t dirtyAddr;
 
+	logic successVal, nextSuccessVal;
+
 	controllerState currState;
 	controllerState nextState;
 
@@ -320,10 +322,41 @@ import cpu_types_pkg::*;
 // Link Register Flip Flop
 // ----------------------------------------- //
 	always_ff @(posedge CLK, negedge nRST) begin
-		if(nRST == 0) begin
+		if (nRST == 0) begin
 			linkRegister <= '{default:'0};
 		end else begin
 			linkRegister <= nextLinkRegister;
+		end
+	end
+
+	always_comb begin
+		nextLinkRegister = linkRegister;
+
+		// Start of LL; Load & Validate
+		if ((dcif.datomic == 1) && (dcif.dmemREN == 1)) begin
+			nextLinkRegister.valid = 1;
+			nextLinkRegister.addr = dcif.dmemaddr;
+		end
+
+		// End of successful SC; Invalidate
+		else if ((dcif.datomic == 1) && (dcif.dmemWEN == 1) && (dcif.dhit == 1)) begin
+			nextLinkRegister.valid = 0;
+		end
+
+		// Other core is manipulating data; Invalidate
+		else if ((cif.ccwait == 1) && (cif.ccsnoopaddr == linkRegister.addr)) begin
+			nextLinkRegister.valid = 0;
+		end
+	end
+
+	always_comb begin
+		successVal = 0;
+		if ((currState == OVERWRITE) || (currState == WRITEHIT)) begin
+			if ((dcif.datomic == 1) && (dcif.dmemWEN == 1) && (dcif.dmemaddr == linkRegister.addr) && (linkRegister.valid == 1) ) begin
+				successVal = 1;
+			end else begin
+				successVal = 0;
+			end
 		end
 	end
 
@@ -726,10 +759,13 @@ import cpu_types_pkg::*;
 
 		end else if (currState == OVERWRITE) begin
 			// Writes in new write data, makes dirty
-			updateClean	  = 0;
+			//updateClean	  = 0;
 			updateWrite   = 1;
 			cif.cctrans   = 1;
 			cif.ccwrite   = 1;
+			if ((successVal == 0) && (dcif.datomic == 1)) begin
+				updateWrite = 0;
+			end
 
 		end else if (currState == READHIT) begin
 			// Returns cached data to system && notifys system
@@ -742,6 +778,9 @@ import cpu_types_pkg::*;
 			dcif.dhit        = 1;
 			updateRecentUsed = 1;
 			cif.daddr     = reqAddr; //need to put address on line...
+			if (dcif.datomic == 1) begin
+				dcif.dmemload = successVal;
+			end
 
 		end else if (currState == FLUSH) begin
 			// Write any data to memory if dirty

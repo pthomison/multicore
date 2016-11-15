@@ -405,9 +405,11 @@ module coherence_control (
 			if (currReq == 0) begin
 				mcif.daddr = cif.daddr[0];
 				mcif.dstore = cif.dstore[0];
+				cif.ccsnoopaddr[1] = cif.daddr[0];
 			end else if (currReq == 1) begin
 				mcif.daddr = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
+				cif.ccsnoopaddr[0] = cif.daddr[1];
 			end
 
 		// Strictly Writing Data To Memory
@@ -415,7 +417,9 @@ module coherence_control (
 			if (currReq == 0) begin
 				cif.dwait[0] = 0;
 				cif.dload[0] = rdata;
+				cif.ccsnoopaddr[1] = cif.daddr[0];
 			end else if (currReq == 1) begin
+				cif.ccsnoopaddr[0] = cif.daddr[1];
 				cif.dwait[1] = 0;
 				cif.dload[1] = rdata;
 			end
@@ -426,7 +430,9 @@ module coherence_control (
 			if (currReq == 0) begin
 				mcif.daddr = cif.daddr[0];
 				mcif.dstore = cif.dstore[0];
+				cif.ccsnoopaddr[1] = cif.daddr[0];
 			end else if (currReq == 1) begin
+				cif.ccsnoopaddr[0] = cif.daddr[1];
 				mcif.daddr = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
 			end
@@ -435,7 +441,9 @@ module coherence_control (
 			if (currReq == 0) begin
 				cif.dwait[0] = 0;
 				cif.dload[0] = rdata;
+				cif.ccsnoopaddr[1] = cif.daddr[0];
 			end else if (currReq == 1) begin
+				cif.ccsnoopaddr[0] = cif.daddr[1];
 				cif.dwait[1] = 0;
 				cif.dload[1] = rdata;
 			end

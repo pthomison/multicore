@@ -99,7 +99,7 @@ dcif1.imemaddr = 0;
   nRST = 1;
   #(PERIOD);
 
-// testcase 1 - read MISS 0
+// testcase 1
 // ----------------------------------------- //
   testcase = 1;
 
@@ -111,6 +111,7 @@ dcif1.imemaddr = 0;
   @(posedge dcif0.dhit);
   #(PERIOD);
 
+  dcif0.datomic   = 0;
   dcif0.dmemREN   = 0;
   dcif0.dmemaddr  = 32'h00000000;
 
@@ -118,52 +119,65 @@ dcif1.imemaddr = 0;
 
 
 
-// // testcase 2 - read MISS 1
+// // testcase 2
 // // ----------------------------------------- //
-//   testcase = 2;
+  testcase = 2;
 
-//   //Intial Conditions
-//   dcif1.dmemREN   = 1;
-//   dcif1.dmemaddr  = 32'h0000A000;
+  //Intial Conditions
+  dcif1.dmemREN   = 1;
+  dcif1.dmemaddr  = 32'h00000100;
+  dcif1.datomic   = 1;
 
-//   @(posedge dcif1.dhit);
-//   #(PERIOD);
+  @(posedge dcif1.dhit);
+  #(PERIOD);
 
-//   dcif1.dmemREN   = 0;
-//   dcif1.dmemaddr  = 32'h00000000;
+  dcif1.dmemREN   = 0;
+  dcif1.dmemaddr  = 32'h00000000;
+  dcif1.datomic   = 0;
 
-//   #(10 * PERIOD);
+  #(10 * PERIOD);
 
-// // testcase 3 - read MISS 1, Snoop Hit 0
-// // ----------------------------------------- //
-//   testcase = 3;
+// testcase 3
+// ----------------------------------------- //
+  testcase = 3;
 
-//   //Intial Conditions
-//   dcif1.dmemREN   = 1;
-//   dcif1.dmemaddr  = 32'h00000100;
+  //Intial Conditions
+  dcif1.dmemWEN   = 1;
+  dcif1.dmemstore = 32'hDEADBEEF;
+  dcif1.dmemaddr  = 32'h00000100;
+  dcif1.datomic   = 1;
+
   
-//   @(posedge dcif1.dhit);
-//   #(PERIOD);
+  @(posedge dcif1.dhit);
+  #(PERIOD);
 
-//   dcif1.dmemREN   = 0;
-//   dcif1.dmemaddr  = 32'h00000000;
+  dcif1.dmemWEN   = 0;
+  dcif1.dmemaddr  = 32'h00000000;
+  dcif1.dmemstore = 0;
+  dcif1.datomic   = 0;
 
-//   #(10 * PERIOD);
+  #(10 * PERIOD);
 
-// // testcase 4 - read MISS 1, Snoop Miss 0
-// // ----------------------------------------- //
-//   testcase = 4;
+// testcase 4
+// ----------------------------------------- //
+  testcase = 4;
 
-//   //Intial Conditions
-//   dcif1.dmemREN   = 1;
-//   dcif1.dmemaddr  = 32'h0000B000;
+  //Intial Conditions
+  dcif1.dmemWEN   = 1;
+  dcif1.dmemstore = 32'hDEADFEED;
+  dcif1.dmemaddr  = 32'h00000100;
+  dcif1.datomic   = 1;
+
   
-//   @(posedge dcif1.dhit);
-//   #(PERIOD);
+  @(posedge dcif1.dhit);
+  #(PERIOD);
 
-//   dcif1.dmemREN   = 0;
-//   dcif1.dmemaddr  = 32'h00000000;
-//   #(PERIOD*10);
+  dcif1.dmemWEN   = 0;
+  dcif1.dmemaddr  = 32'h00000000;
+  dcif1.dmemstore = 0;
+  dcif1.datomic   = 0;
+
+  #(10 * PERIOD);
 
 
 
