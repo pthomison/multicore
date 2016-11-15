@@ -120,7 +120,16 @@ import cpu_types_pkg::*;
 
 // Connecting Memory Data
 // ----------------------------------------- //
-	assign mload   = cif.dload;
+
+	always_comb begin
+		if (dcif.datomic == 1) begin
+			mload = successVal;
+		end else begin
+			mload = cif.dload;
+		end
+	end
+
+	//assign mload   = (dcif.datomic) ? successVal : cif.dload;
 	assign mstore  = dcif.dmemstore;
 
 // Cache Flip Flops
@@ -344,7 +353,7 @@ import cpu_types_pkg::*;
 		end
 
 		// Other core is manipulating data; Invalidate
-		else if ((cif.ccwait == 1) && (cif.ccsnoopaddr == linkRegister.addr)) begin
+		else if ((cif.ccwait == 1) && (cif.ccsnoopaddr == linkRegister.addr) && (cif.ccinv == 1)) begin
 			nextLinkRegister.valid = 0;
 		end
 	end

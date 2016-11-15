@@ -334,7 +334,7 @@ casez (opcode)
 	LL: begin
 		cuif.ALUop = ALU_ADD;
 		cuif.branch = 0; 	//1 if branching
-		cuif.MemtoReg = 0;	//1 for ALU data - 0 for data from cache
+		cuif.MemtoReg = 1;	//1 for ALU data - 0 for data from cache
 		cuif.WEN = 1;		//1 if writing to a register - all RTYPE are 1 (except JR)
 		cuif.jal = 0; 		//1 for JAL instruction
 		cuif.extop = 1;		//1 for signed - 0 for zero
@@ -354,7 +354,7 @@ casez (opcode)
 	SC: begin
 		cuif.ALUop = ALU_ADD;
 		cuif.branch = 0; 	//1 if branching
-		cuif.MemtoReg = 0;	//1 for ALU data - 0 for data from cache
+		cuif.MemtoReg = 1;	//1 for ALU data - 0 for data from cache
 		cuif.WEN = 1;		//1 if writing to a register - all RTYPE are 1 (except JR)
 		cuif.jal = 0; 		//1 for JAL instruction
 		cuif.extop = 1;		//1 for signed - 0 for zero
