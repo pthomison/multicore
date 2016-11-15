@@ -68,6 +68,7 @@ always_comb begin
 	cuif.RegDest = 00;	//00 if RD - 01 if RT - 10 if REG#31 - IF RTYPE then 00
 	cuif.halt = 0;
 	cuif.itype = 0;		//1 if I Type
+	cuif.datomic = 0;
 
 casez (opcode) 
 
@@ -275,7 +276,7 @@ casez (opcode)
 				cuif.dREN = 0;		//1 if reading data from memory
 				cuif.LUI = 0;		//1 for LUI instruction
 				cuif.imemREN = 1;	//1 unless HALT
-				cuif.BEQ = 0; 		//1 if BEQ - 0 if BNE
+				cuif.BEQ = 0; 		//1 if BEQ -SC 0 if BNE
 				cuif.ALUsrc = 00; 	//00 if rdat2 - 01 if extended Immediate - 10 if shamt
 				cuif.pcsrc = 00;		//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
 				cuif.RegDest = 00;	//00 if RD - 01 if RT - 10 if REG#31 - IF RTYPE then 00
@@ -296,7 +297,7 @@ casez (opcode)
 				cuif.imemREN = 1;	//1 unless HALT
 				cuif.BEQ = 0; 		//1 if BEQ - 0 if BNE
 				cuif.ALUsrc = 00; 	//00 if rdat2 - 01 if extended Immediate - 10 if shamt
-				cuif.pcsrc = 00;		//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
+				cuif.pcsrc = 00;	//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
 				cuif.RegDest = 00;	//00 if RD - 01 if RT - 10 if REG#31 - IF RTYPE then 00
 				cuif.halt = 0;
 				cuif.itype = 0;
@@ -315,7 +316,7 @@ casez (opcode)
 				cuif.imemREN = 1;	//1 unless HALT
 				cuif.BEQ = 0; 		//1 if BEQ - 0 if BNE
 				cuif.ALUsrc = 00; 	//00 if rdat2 - 01 if extended Immediate - 10 if shamt
-				cuif.pcsrc = 00;		//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
+				cuif.pcsrc = 00;	//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
 				cuif.RegDest = 00;	//00 if RD - 01 if RT - 10 if REG#31 - IF RTYPE then 00
 				cuif.halt = 0;
 				cuif.itype = 0;
@@ -328,6 +329,46 @@ casez (opcode)
 
 		endcase
 
+	end
+
+	LL: begin
+		cuif.ALUop = ALU_ADD;
+		cuif.branch = 0; 	//1 if branching
+		cuif.MemtoReg = 0;	//1 for ALU data - 0 for data from cache
+		cuif.WEN = 1;		//1 if writing to a register - all RTYPE are 1 (except JR)
+		cuif.jal = 0; 		//1 for JAL instruction
+		cuif.extop = 1;		//1 for signed - 0 for zero
+		cuif.dWEN = 0;		//1 if writing data to memory
+		cuif.dREN = 1;		//1 if reading data from memory
+		cuif.LUI = 0;		//1 for LUI instruction
+		cuif.imemREN = 1;	//1 unless HALT
+		cuif.BEQ = 0; 		//1 if BEQ - 0 if BNE
+		cuif.ALUsrc = 01; 	//00 if rdat2 - 01 if extended Immediate - 10 if shamt
+		cuif.pcsrc = 00;	//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
+		cuif.RegDest = 01;	//00 if RD - 01 if RT - 10 if REG#31 - IF RTYPE then 00
+		cuif.halt = 0;
+		cuif.itype = 1;
+		cuif.datomic = 1;
+	end
+
+	SC: begin
+		cuif.ALUop = ALU_ADD;
+		cuif.branch = 0; 	//1 if branching
+		cuif.MemtoReg = 0;	//1 for ALU data - 0 for data from cache
+		cuif.WEN = 1;		//1 if writing to a register - all RTYPE are 1 (except JR)
+		cuif.jal = 0; 		//1 for JAL instruction
+		cuif.extop = 1;		//1 for signed - 0 for zero
+		cuif.dWEN = 1;		//1 if writing data to memory
+		cuif.dREN = 0;		//1 if reading data from memory
+		cuif.LUI = 0;		//1 for LUI instruction
+		cuif.imemREN = 1;	//1 unless HALT
+		cuif.BEQ = 0; 		//1 if BEQ - 0 if BNE
+		cuif.ALUsrc = 01; 	//00 if rdat2 - 01 if extended Immediate - 10 if shamt
+		cuif.pcsrc = 00;	//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
+		cuif.RegDest = 01;	//00 if RD - 01 if RT - 10 if REG#31 - IF RTYPE then 00
+		cuif.halt = 0;
+		cuif.itype = 1;
+		cuif.datomic = 1;
 	end
 
 	ADDIU: begin

@@ -44,6 +44,7 @@ begin
 		prif.halt_out <= 0;
 		prif.zero_f_out <= 0;
 		prif.itype_out <= 0;
+		prif.datomic_out <= 0;
 
 	end else if (prif.flush == 1) begin
 		prif.shamt_out <= 0;
@@ -74,6 +75,7 @@ begin
 		prif.halt_out <= 0;
 		prif.zero_f_out <= 0;
 		prif.itype_out <= 0;
+		prif.datomic_out <= 0;
 	end else begin
 		if (prif.enable) begin
 			prif.shamt_out <= prif.shamt_in;
@@ -104,6 +106,7 @@ begin
 			prif.halt_out <= prif.halt_in;
 			prif.zero_f_out <= prif.zero_f_in;
 			prif.itype_out <= prif.itype_in;
+			prif.datomic_out <= prif.datomic_in;
 		end else if (prif.clearMemReq == 1) begin
 			prif.dWEN_out <= 0;
 			prif.dREN_out <= 0;

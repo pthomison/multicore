@@ -104,6 +104,7 @@ MULTICORE MULTICORE MULTICORE
 	assign dpif.dmemaddr  = exm_plif.outport_out; 
 	assign dpif.dmemREN   = exm_plif.dREN_out;
 	assign dpif.dmemWEN   = exm_plif.dWEN_out;
+	assign dpif.datomic   = exm_plif.datomic_out;
 
 	// Halt Latch
 	// ----------------------------------------- //	
@@ -276,6 +277,7 @@ MULTICORE MULTICORE MULTICORE
 	assign idex_plif.rd_in       = cuif.rd;
 	assign idex_plif.rt_in       = cuif.rt;
 	assign idex_plif.rs_in       = cuif.rs;
+	assign idex_plif.datomic_in  = cuif.datomic;
 	// Memory Control Signals
 	assign idex_plif.dWEN_in     = dwen_temp;
 	assign idex_plif.dREN_in     = cuif.dREN;
@@ -295,6 +297,9 @@ MULTICORE MULTICORE MULTICORE
 
 	// EXM
 	// ----------------------------------------- //
+
+
+
 	assign exm_plif.instruction_in = idex_plif.instruction_out;
 	assign exm_plif.immed_in    = idex_plif.immed_out;
 	assign exm_plif.zero_f_in   = aluif.zero_f;
@@ -326,6 +331,7 @@ MULTICORE MULTICORE MULTICORE
 	assign exm_plif.rt_in       = idex_plif.rt_out;
 	assign exm_plif.itype_in    = idex_plif.itype_out;
 	assign exm_plif.pcout_in    = idex_plif.pcout_out;	
+	assign exm_plif.datomic_in  = idex_plif.datomic_out;	
  
 	// Memory Control Signals
 	assign exm_plif.dWEN_in     = idex_plif.dWEN_out;
@@ -341,6 +347,9 @@ MULTICORE MULTICORE MULTICORE
 
 	// MWB
 	// ----------------------------------------- //
+
+
+
 	assign mwb_plif.immed_in    = exm_plif.immed_out;
 	assign mwb_plif.rd_in      = exm_plif.rd_out;
 	// Input Assignments
@@ -350,7 +359,8 @@ MULTICORE MULTICORE MULTICORE
 	assign mwb_plif.dmemload_in = exm_plif.dmemload_out;
 	assign mwb_plif.halt_in     = exm_plif.halt_out;
 	assign mwb_plif.itype_in    = exm_plif.itype_out;
-	assign mwb_plif.rt_in      = exm_plif.rt_out;
+	assign mwb_plif.rt_in       = exm_plif.rt_out;
+	assign mwb_plif.datomic_in  = exm_plif.datomic_out;
 
 	// Write Back Control Signals
 	assign mwb_plif.WEN_in      = exm_plif.WEN_out;
