@@ -65,7 +65,7 @@ import cpu_types_pkg::*;
 	word_t loadAddrA, loadAddrB;	//Address of word A, address of word B
 	logic recUsed [7:0];			//least recently used cache
 
-	dcachef_t reqAddr, snpAddr;		//The Requesting address, snooping address
+	dcachef_t reqAddr, snpAddr, lnkAddr;		//The Requesting address, snooping address
 
 	word_t mload, mstore;			//mload is cif.dload, mstore is dcif.dmemstore
 
@@ -101,6 +101,7 @@ import cpu_types_pkg::*;
 
 	controllerState currState;
 	controllerState nextState;
+	logic invCache, invalidate;
 
 // Request Address Selection
 // ----------------------------------------- //
@@ -109,6 +110,7 @@ import cpu_types_pkg::*;
 			// Use the Address From Datapath
 			reqAddr        = dcachef_t'(dcif.dmemaddr);
 			snpAddr        = dcachef_t'(cif.ccsnoopaddr);
+			lnkAddr        = dcachef_t'(linkRegister.addr);
 		end else begin
 			// Independently Set Index for Flushing
 			reqAddr.idx    = flushIdxSelect;
@@ -151,6 +153,7 @@ import cpu_types_pkg::*;
 				end
 			end
 
+			//invalidate because other cache changed data
 			else if (snpHit == 1 && cif.ccwait == 1 && snpCache == 0) begin
 				if (cif.ccinv == 1) begin
 					cacheOne[snpAddr.idx].valid = 0;
@@ -159,6 +162,11 @@ import cpu_types_pkg::*;
 					cacheOne[snpAddr.idx].dirty = 0;
 				end
 			end
+
+			//invalidate because sw before sc
+			//else if ((invCache == 0) && (invalidate == 1)) begin
+				//cacheOne[lnkAddr.idx].valid = 0;
+			//end
 
 			// Miss; Need to write to next avaliable slot
 			else if (prehit == 0) begin
@@ -250,6 +258,10 @@ import cpu_types_pkg::*;
 				if (snpClean == 1) begin
 					cacheTwo[snpAddr.idx].dirty = 0;
 				end
+			end
+
+			else if ((invCache == 1) && (invalidate == 1)) begin
+				cacheTwo[lnkAddr.idx].valid = 0;
 			end
 	
 			// Miss; Need to write to next avaliable slot
@@ -352,8 +364,16 @@ import cpu_types_pkg::*;
 			nextLinkRegister.valid = 0;
 		end
 
+		else if ((dcif.datomic == 0) && (dcif.dmemWEN == 1) && (dcif.dmemaddr == linkRegister.addr) && (dcif.dhit == 1)) begin
+			//invCache = hitCache;
+			//invalidate = 1;
+			nextLinkRegister.valid = 0;
+		end
+
 		// Other core is manipulating data; Invalidate
-		else if ((cif.ccwait == 1) && (cif.ccsnoopaddr == linkRegister.addr) && (cif.ccinv == 1)) begin
+		else if ((cif.ccwait == 1) && (cif.ccsnoopaddr == linkRegister.addr) ) begin
+			//invCache = hitCache;
+			//invalidate = 1;
 			nextLinkRegister.valid = 0;
 		end
 	end
