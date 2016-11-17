@@ -124,7 +124,8 @@ import cpu_types_pkg::*;
 // ----------------------------------------- //
 
 	always_comb begin
-		if (dcif.datomic == 1) begin
+		//added dmemWEN
+		if ((dcif.datomic == 1) && (dcif.dmemWEN)) begin
 			mload = successVal;
 		end else begin
 			mload = cif.dload;
@@ -364,14 +365,15 @@ import cpu_types_pkg::*;
 			nextLinkRegister.valid = 0;
 		end
 
+		//SW in same core
 		else if ((dcif.datomic == 0) && (dcif.dmemWEN == 1) && (dcif.dmemaddr == linkRegister.addr) && (dcif.dhit == 1)) begin
 			//invCache = hitCache;
 			//invalidate = 1;
 			nextLinkRegister.valid = 0;
 		end
 
-		// Other core is manipulating data; Invalidate
-		else if ((cif.ccwait == 1) && (cif.ccsnoopaddr == linkRegister.addr) ) begin
+		// Other core is doing SC first; Invalidate
+		else if ((cif.ccwait == 1) && (cif.ccsnoopaddr == linkRegister.addr) && (cif.ccinv == 1)) begin
 			//invCache = hitCache;
 			//invalidate = 1;
 			nextLinkRegister.valid = 0;

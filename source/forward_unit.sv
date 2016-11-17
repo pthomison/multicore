@@ -41,6 +41,8 @@ always_comb begin
     end
 
 
+    //NEED THIS FOR SC PROBLEM
+    //whatever make LW work in FU needs to make SW afer SC also work
     if ( ! ((fuif.exm_WEN && fuif.exm_wsel_out) && (fuif.exm_wsel_out == fuif.idex_rt_out)) ) begin
       if  ( fuif.mwb_wsel_out == fuif.idex_rt_out ) begin //|| ((fuif.idex_rt_out == fuif.mwb_rt_out) && fuif.mwb_itype_out ) )begin
         //portb is wdat after WDAT MUX in WB stage
