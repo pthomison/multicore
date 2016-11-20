@@ -16,10 +16,17 @@ module hazard_unit (
 always_comb begin 
 	huif.lw_nop = 0;
 
-	// if 
+	// if read enable - LW followed by a dependancy
 	if ((huif.idex_dren_out == 1) && ((huif.idex_rt_out == huif.ifid_rs_out) || (huif.idex_rt_out == huif.ifid_rt_out))) begin
 		huif.lw_nop = 1;
 	end
+
+	// if read enable - SC followed by a dependancy
+	else if ((huif.idex_dwen_out == 1) && (huif.idex_datomic_out == 1) && ((huif.idex_rt_out == huif.ifid_rs_out) || (huif.idex_rt_out == huif.ifid_rt_out))) begin
+		huif.lw_nop = 1;
+	end
+
+
 end
 
 //00 if PC+4

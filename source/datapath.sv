@@ -89,8 +89,9 @@ MULTICORE MULTICORE MULTICORE
 	logic ifid_temp_flush_enable, pcif_enable_temp, idex_temp_flush_enable;
 
 	//Temp Variables
-	logic dwen_temp; 		//idex_plif.dWEN_in temp
+	logic dwen_temp, dren_tmp; 		//idex_plif.dWEN_in temp
 	logic rwen_temp; 		//idex_plif.WEN_in temp
+	logic datomic_tmp;
 	regbits_t wsel_temp; 	//exm_plif.wsel_in temp
 	word_t inst_temp; 		//idex_plif.instruction_in temp
 	word_t temp_rdat2; 		//aluif.rdat2 temp
@@ -239,6 +240,8 @@ MULTICORE MULTICORE MULTICORE
 	assign huif.idex_BEQ       = idex_plif.BEQ_out;
 	assign huif.idex_branch    = idex_plif.branch_out;
 	assign huif.alu_zero_f     = aluif.zero_f; 
+	assign huif.idex_dwen_out  = idex_plif.dWEN_out; 
+	assign huif.idex_datomic_out = idex_plif.datomic_out; 
 
 // Pipeline Registers Input Assignments
 // ----------------------------------------- //	
@@ -256,12 +259,16 @@ MULTICORE MULTICORE MULTICORE
 	begin
 		if (huif.lw_nop == 1) begin
 			dwen_temp = 0;
+			dren_tmp = 0;
 			rwen_temp = 0;
 			inst_temp = 32'h00000000;
+			datomic_tmp = 0;
 		end else begin
 			dwen_temp = cuif.dWEN;
 			rwen_temp = cuif.WEN;
 			inst_temp = ifid_plif.instruction_out;
+			datomic_tmp = cuif.datomic;
+			dren_tmp  = cuif.dREN;
 		end
 	end
 
@@ -277,10 +284,10 @@ MULTICORE MULTICORE MULTICORE
 	assign idex_plif.rd_in       = cuif.rd;
 	assign idex_plif.rt_in       = cuif.rt;
 	assign idex_plif.rs_in       = cuif.rs;
-	assign idex_plif.datomic_in  = cuif.datomic;
+	assign idex_plif.datomic_in  = datomic_tmp;
 	// Memory Control Signals
 	assign idex_plif.dWEN_in     = dwen_temp;
-	assign idex_plif.dREN_in     = cuif.dREN;
+	assign idex_plif.dREN_in     = dren_tmp;
 	assign idex_plif.BEQ_in      = cuif.BEQ;
 	assign idex_plif.branch_in   = cuif.branch;
 	// Write Back Control Signals

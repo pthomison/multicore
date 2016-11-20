@@ -551,7 +551,7 @@ import cpu_types_pkg::*;
 				// Any Miss; Destination is NOT dirty
 				nextState = DATAREQA;
 
-			end else if (destinationDirty == 1 && dcif.dmemWEN == 1) begin
+			end else if (destinationDirty == 1 && (dcif.dmemWEN == 1 || dcif.dmemREN == 1)) begin
 				// Any Miss; Destination IS dirty
 
 				/*
@@ -826,6 +826,8 @@ import cpu_types_pkg::*;
 		end else if (currState == STOP) begin
 		// Stop
 			dcif.flushed  = 1;
+			cif.cctrans = 1;
+			cif.ccwrite = 0;
 
 		end else if (currState == SNOOP) begin
 			cif.cctrans = 1;

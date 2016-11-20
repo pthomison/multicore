@@ -118,9 +118,19 @@ module coherence_control (
 		if(!nRST) begin
 			NextCache <= 0;
 		end else begin
-			if (mcif.iwait == 0) begin
-				NextCache <= ~NextCache;
+			if (cif.iREN[0] == 1 && cif.iREN[1] == 1) begin
+				if (mcif.iwait == 0) begin
+					NextCache <= ~NextCache;
+				end
 			end
+			else if (cif.iREN[0] == 1 && cif.iREN[1] == 0) begin
+				NextCache <= 0;
+			end
+
+			else if (cif.iREN[0] == 0 && cif.iREN[1] == 1) begin
+				NextCache <= 1;
+			end
+
 		end
 	end
 
