@@ -10,7 +10,7 @@
 
 module memory_control (
   input CLK, nRST,
-  cache_control_if.cc ccif
+  cache_control_if ccif
 );
 
 // type import
@@ -25,9 +25,9 @@ assign mcif.iload = mcif.ramload;
 assign mcif.dload = mcif.ramload;
 
 assign mcif.ramstate = ccif.ramstate;
-assign ccif.ramaddr = mcif.ramaddr;
-assign ccif.ramstore = mcif.ramstore;
 assign mcif.ramload  = ccif.ramload;
+assign ccif.ramaddr  = mcif.ramaddr;
+assign ccif.ramstore = mcif.ramstore;
 assign ccif.ramWEN   = mcif.ramWEN;
 assign ccif.ramREN   = mcif.ramREN;
 

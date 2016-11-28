@@ -11,7 +11,7 @@
 
 module coherence_control (
   input CLK, nRST,
-  cache_control_if.cc cif,
+  cache_control_if cif,
   caches_if.caches mcif
 );
   	// type import
@@ -312,7 +312,7 @@ module coherence_control (
 		// Writing Requestee Data Word One
 		end else if (currState == W1MOD) begin
 			mcif.dWEN = 1;
-			newRData = ccif.dstore[!currReq];
+			newRData = cif.dstore[!currReq];
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
@@ -342,7 +342,7 @@ module coherence_control (
 		// Writing Requestee Data Word Two
 		end else if (currState == W2MOD) begin
 			mcif.dWEN = 1;
-			newRData = ccif.dstore[!currReq];
+			newRData = cif.dstore[!currReq];
 			if (currReq == 0) begin
 				mcif.daddr  = cif.daddr[1];
 				mcif.dstore = cif.dstore[1];
