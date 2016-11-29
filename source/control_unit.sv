@@ -347,7 +347,7 @@ casez (opcode)
 		cuif.pcsrc = 00;	//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
 		cuif.RegDest = 01;	//00 if RD - 01 if RT - 10 if REG#31 - IF RTYPE then 00
 		cuif.halt = 0;
-		cuif.itype = 1;
+		cuif.itype = 0;
 		cuif.datomic = 1;
 	end
 
@@ -367,7 +367,7 @@ casez (opcode)
 		cuif.pcsrc = 00;	//00 if PC+4 - 01 if JR - 10 if BEQ or BNE  - 11 if J or JAL
 		cuif.RegDest = 01;	//00 if RD - 01 if RT - 10 if REG#31 - IF RTYPE then 00
 		cuif.halt = 0;
-		cuif.itype = 1;
+		cuif.itype = 0;
 		cuif.datomic = 1;
 	end
 
