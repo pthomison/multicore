@@ -22,11 +22,15 @@ always_comb begin
   if ( fuif.exm_WEN && (fuif.exm_wsel_out != 0) ) begin
     if  ( fuif.exm_wsel_out == fuif.idex_rs_out ) begin //|| ((fuif.idex_rs_out == fuif.exm_rt_out) && fuif.exm_itype_out ) ) begin
       //porta is from exm_outport - which is from the prior alu restult
-      fuif.ForwardA = 2'b10; 
+      //if ( ! (fuif.exm_datomic)) begin //new
+        fuif.ForwardA = 2'b10; 
+      //end
     end
     if (  fuif.exm_wsel_out == fuif.idex_rt_out ) begin // || ((fuif.idex_rt_out == fuif.exm_rt_out) && fuif.exm_itype_out ) ) begin
       //portb is from exm_outport - which is from the prior alu restult
-      fuif.ForwardB = 2'b10;
+      //if ( ! (fuif.exm_datomic)) begin
+        fuif.ForwardB = 2'b10;
+      //end
     end
   end
 

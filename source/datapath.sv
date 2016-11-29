@@ -92,6 +92,7 @@ MULTICORE MULTICORE MULTICORE
 	logic dwen_temp, dren_tmp; 		//idex_plif.dWEN_in temp
 	logic rwen_temp; 		//idex_plif.WEN_in temp
 	logic datomic_tmp;
+	logic branch_tmp;
 	regbits_t wsel_temp; 	//exm_plif.wsel_in temp
 	word_t inst_temp; 		//idex_plif.instruction_in temp
 	word_t temp_rdat2; 		//aluif.rdat2 temp
@@ -229,6 +230,8 @@ MULTICORE MULTICORE MULTICORE
 
 	assign fuif.mwb_wsel_out  = mwb_plif.wsel_out;
 	assign fuif.exm_wsel_out  = exm_plif.wsel_out;
+	assign fuif.exm_datomic   = exm_plif.datomic_out; //new
+	assign fuif.exm_dREN      = exm_plif.dREN_out; //new
 
 // Hazard Unit Inputs
 // ----------------------------------------- //
@@ -263,12 +266,14 @@ MULTICORE MULTICORE MULTICORE
 			rwen_temp = 0;
 			inst_temp = 32'h00000000;
 			datomic_tmp = 0;
+			branch_tmp = 0;
 		end else begin
 			dwen_temp = cuif.dWEN;
 			rwen_temp = cuif.WEN;
 			inst_temp = ifid_plif.instruction_out;
 			datomic_tmp = cuif.datomic;
 			dren_tmp  = cuif.dREN;
+			branch_tmp = cuif.branch;
 		end
 	end
 
@@ -289,7 +294,7 @@ MULTICORE MULTICORE MULTICORE
 	assign idex_plif.dWEN_in     = dwen_temp;
 	assign idex_plif.dREN_in     = dren_tmp;
 	assign idex_plif.BEQ_in      = cuif.BEQ;
-	assign idex_plif.branch_in   = cuif.branch;
+	assign idex_plif.branch_in   = branch_tmp;
 	// Write Back Control Signals
 	assign idex_plif.WEN_in      = rwen_temp;
 	assign idex_plif.MemtoReg_in = cuif.MemtoReg;

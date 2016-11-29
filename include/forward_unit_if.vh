@@ -22,16 +22,17 @@ interface  forward_unit_if;
 	logic mwb_WEN, exm_WEN;
 	logic exm_itype_out, mwb_itype_out;
 	logic[1:0] ForwardB, ForwardA;
+	logic exm_datomic, exm_dREN;
 
 
 	modport fu (
-		input exm_WEN, idex_rt_out, idex_rs_out, mwb_WEN, exm_itype_out, mwb_itype_out, exm_wsel_out, mwb_wsel_out,
+		input exm_WEN, idex_rt_out, idex_rs_out, mwb_WEN, exm_itype_out, mwb_itype_out, exm_wsel_out, mwb_wsel_out, exm_datomic, exm_dREN,
 		output ForwardB, ForwardA
 	);
 
 	modport tb (
 		output ForwardB, ForwardA,
-		input exm_WEN, idex_rt_out, idex_rs_out, mwb_WEN, exm_itype_out, mwb_itype_out, exm_wsel_out, mwb_wsel_out
+		input exm_WEN, idex_rt_out, idex_rs_out, mwb_WEN, exm_itype_out, mwb_itype_out, exm_wsel_out, mwb_wsel_out, exm_datomic, exm_dREN
 	);
 
 endinterface
