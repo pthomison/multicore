@@ -10,18 +10,20 @@
     ori   $sp, $zero, 0x3ffc
     jal   mainp0               # go to program
     halt
-  
-  mainp0:
-    # Locking SP
-    ori   $a0, $zero, lock1
-    jal   lockSR
 
+
+#----------------------------------------------------------
+# Second Processor -- Consumer
+#----------------------------------------------------------
+    org   0x200               # second processor p1
+    ori   $sp, $zero, 0x3ffc
+    jal   mainp1              # go to program
+    halt
+
+
+  mainp0:
     # save return address 
     push  $ra
-
-    # Unlocking SP
-    ori   $a0, $zero, lock1
-    jal   unlockSR
 
     # seeding crc generator                 
     ori   $t0, $zero, seed
@@ -29,16 +31,9 @@
     jal   crc32SR
     add   $s0, $zero, $v0
 
-    # Locking SP
-    ori   $a0, $zero, lock1
-    jal   lockSR
-
     # Pushing First CRC Val onto Stack
-    push $s0
-
-    # Unlocking SP
-    ori   $a0, $zero, lock1
-    jal   unlockSR
+    or   $a0, $zero, $s0
+    jal ssPushSR
 
     loop:
       # generating crc val
@@ -46,78 +41,96 @@
       jal   crc32SR
       add    $s0, $zero, $v0
 
-      # Locking SP
-      ori   $a0, $zero, lock1
-      jal   lockSR
-
       # Pushing CRC Val onto Stack
-      push $s0
+      or   $a0, $zero, $s0
+      jal ssPushSR
 
-      # Unlocking SP
-      ori   $a0, $zero, lock1      # move lock to arguement register
-      jal   unlockSR              # release the lock
 
       # Incrementing counter
-      ori   $t0, $zero, numCount
+      ori   $t0, $zero, numCountOne
       lw    $t1, 0($t0)
-      addi  $t1, $t1, 0x0001
+      addi  $t1, $t1, 1
       sw    $t1, 0($t0)
 
-      ori   $t0, $zero, 0x0100
+      ori   $t0, $zero, 0x00FF
       bne   $t1, $t0, loop
 
     pop   $ra                 # get return address
     jr    $ra                 # return to caller
 
-
-#----------------------------------------------------------
-# Second Processor -- Consumer
-#----------------------------------------------------------
-    org   0x500               # second processor p1
-    ori $sp, $zero, 0x3ffc
-    jal   mainp1              # go to program
-    halt
-
   mainp1:	
     push  $ra                 # save return address
 
-  waitForData:
+    waitForData:
     # Unlocking SP if it is locked
-    ori   $a0, $zero, lock1
+    ori   $a0, $zero, SSPlock
     jal   unlockSR
 
+    # Unlocked SP gives P0 a chance to process data
+
     # Locking SP
-    ori   $a0, $zero, lock1
+    ori   $a0, $zero, SSPlock
     jal   lockSR
 
     # Waiting for data
-    beq $sp, $s0, waitForData
+    ori $t0, $zero, SSP
+    ori $t2, $zero, 0x2000
+    lw  $t1, 0($t0)
+    beq $t1, $t2, waitForData
 
-    # Grabbing Data
-    pop $s1
-
-    # Unlocking SP
-    ori   $a0, $zero, lock1
+    # Unlocking SP if it is locked
+    ori   $a0, $zero, SSPlock
     jal   unlockSR
 
+    # Grabbing Data
+    jal ssPopSR
+    or $s0, $zero, $v0
+
     # Masking off top 16
-    lui $t0, FFFF
-    srl $t0, $t0, 4
-    or  $s1, $s1, $t0
+    lui $t0, 0xFFFF
+    srl $t0, $t0, 16
+    and $s0, $s0, $s0
+    and $s0, $t0, $s0
 
     # Adding To Total
     ori $t0, $zero, total
     lw  $t1, 0($t0)
-    add $t1, $t1, $s1
+    add $t1, $t1, $s0
     sw  $t1, 0($t0)
 
     # Checking Min
     ori $t0, $zero, min
-    lw  $t1, 0($t0)
+    lw  $a0, 0($t0)
+    or  $a1, $zero, $s0
+    jal minSR
+    ori $t0, $zero, min
+    sw  $v0, 0($t0)
 
     # Checking Max
+    ori $t0, $zero, max
+    lw  $a0, 0($t0)
+    or  $a1, $zero, $s0
+    jal maxSR
+    ori $t0, $zero, max
+    sw  $v0, 0($t0)
 
+    # Incrementing counter
+    ori   $t0, $zero, numCountTwo
+    lw    $t1, 0($t0)
+    addi  $t1, $t1, -1
+    sw    $t1, 0($t0)
 
+    ori   $t0, $zero, 0x0000
+    bne   $t1, $t0, waitForData
+
+    ori $t0, $zero, min
+    ori $t1, $zero, max
+    ori $t2, $zero, total
+
+    lw $s0, 0($t0)
+    lw $s1, 0($t1)
+    lw $s2, 0($t2)
+    srl $s3, $s2, 8
 
     pop   $ra                 # get return address
     jr    $ra                 # return to callerpushSS
@@ -127,7 +140,6 @@
 #----------------------------------------------------------
 
   # pass in an address to lock function in argument register 0
-  # returns when lock is available
   lockSR:
     ll    $t0, 0($a0)         # load lock location
     bne   $t0, $0, lockSR     # wait on lock to be open
@@ -138,7 +150,6 @@
 
 
   # pass in an address to unlock function in argument register 0
-  # returns when lock is free
   unlockSR:
     sw    $0, 0($a0)
     jr    $ra
@@ -149,7 +160,6 @@
     ori $t1, $t1, 0x1DB7
     or $t2, $0, $0
     ori $t3, $0, 32
-
   l1:
     slt $t4, $t2, $t3
     beq $t4, $zero, l2
@@ -166,7 +176,7 @@
     jr $ra
 
   # max (a0=a,a1=b) returns v0=max(a,b)
-  max:
+  maxSR:
     push  $ra
     push  $a0
     push  $a1
@@ -181,7 +191,7 @@
     jr    $ra
 
   # min (a0=a,a1=b) returns v0=min(a,b)
-  min:
+  minSR:
     push  $ra
     push  $a0
     push  $a1
@@ -196,18 +206,20 @@
     jr    $ra
 
   # Push Synced Stack (1 arg, 0 return)
-  pushSS:
+  ssPushSR:
     push $ra
     push $a0
+    or   $t7, $zero, $a0
 
     # Locking SSP
     ori   $a0, $zero, SSPlock
     jal   lockSR
 
-    lw    $t0, 0(SSP) 
-    addiu $t0, $t0, -4
-    sw    $a0, 0($t0)
-    sw    $t0, 0(SSP)
+    ori   $t0, $zero, SSP
+    lw    $t1, 0($t0) 
+    addiu $t1, $t1, -4
+    sw    $t7, 0($t1)
+    sw    $t1, 0($t0)
 
     # Unlocking SP
     ori   $a0, $zero, SSPlock
@@ -217,25 +229,24 @@
     pop $ra
     jr  $ra
 
-  # Pop Synced Stack (1 arg, 1 return)
-  popSS:
+  # Pop Synced Stack (0 arg, 1 return)
+  ssPopSR:
     push $ra
-    push $a0
 
     # Locking SSP
     ori   $a0, $zero, SSPlock
     jal   lockSR
 
-    lw    $t0, 0(SSP) 
+    ori   $t1, $zero, SSP
+    lw    $t0, 0($t1) 
     lw    $v0, 0($t0)
     addiu $t0, $t0, 4
-    sw    $t0, 0(SSP)
+    sw    $t0, 0($t1)
 
     # Unlocking SP
     ori   $a0, $zero, SSPlock
     jal   unlockSR
 
-    pop $a0
     pop $ra
     jr  $ra
 
